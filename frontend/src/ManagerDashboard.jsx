@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
 
 export default function ManagerDashboard({ onExitToMenu, onMenuUpdated }) {
   // Auth state
