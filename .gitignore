@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Production builds
+frontend/build/
+frontend/dist/
+frontend/.vite/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+backend/**/__pycache__/
+
+# Environment
+.env
+.env.local
+venv/
+.venv/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
