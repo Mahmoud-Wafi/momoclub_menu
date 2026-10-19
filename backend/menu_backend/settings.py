@@ -59,7 +59,11 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "menu_backend.urls"
 
-FRONTEND_BUILD_DIR = BASE_DIR.parent / 'frontend' / 'build'
+FRONTEND_BUILD_DIR = (
+    BASE_DIR.parent / 'frontend' / 'dist'
+    if (BASE_DIR.parent / 'frontend' / 'dist').exists()
+    else BASE_DIR.parent / 'frontend' / 'build'
+)
 
 TEMPLATES = [
     {
