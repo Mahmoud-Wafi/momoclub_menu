@@ -6,6 +6,8 @@ import ManagerDashboard from './ManagerDashboard';
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
 const WHATSAPP_NUMBER = '201127603628';
 const DELIVERY_NUMBER = '01127603628';
+const RESTAURANT_ADDRESS = 'مركز أبو المطامير - كوبري خميس - أمام فرع وي';
+const WORKING_HOURS = 'يومياً من 9:00 صباحاً حتى 3:00 صباحاً';
 
 const checkIsManagerRoute = () => {
   const path = window.location.pathname.toLowerCase();
@@ -201,6 +203,8 @@ function App() {
   // Build WhatsApp message
   const buildWhatsAppMessage = useCallback(() => {
     let message = '🍽️ *طلب جديد من MOMO CLUB*\n';
+    message += `📍 ${RESTAURANT_ADDRESS}\n`;
+    message += `🕐 مواعيد العمل: ${WORKING_HOURS}\n`;
     message += '━━━━━━━━━━━━━━━━━━━━\n\n';
 
     if (orderType === 'dine-in') {
@@ -256,6 +260,15 @@ function App() {
     const message = buildWhatsAppMessage();
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
     window.open(url, '_blank');
+
+    // Empty cart and reset order inputs
+    setCart([]);
+    setIsCartOpen(false);
+    setTableNumber('');
+    setCustomerName('');
+    setCustomerAddress('');
+    setOrderNotes('');
+    showToast('✅ تم إرسال الطلب وإفراغ السلة بنجاح!', 'success');
   }, [cart, orderType, tableNumber, customerName, customerAddress, buildWhatsAppMessage, showToast]);
 
   // Manager mode
@@ -283,20 +296,20 @@ function App() {
     <div className="app">
       {/* ====== HERO HEADER ====== */}
       <header className={`header ${headerShrink ? 'header--shrink' : ''}`}>
-        {/* Top Bar - Contact Info */}
+        {/* Top Bar - Restaurant Info */}
         <div className={`header-topbar ${headerShrink ? 'hide' : ''}`}>
           <div className="topbar-inner">
-            <a href={`tel:${DELIVERY_NUMBER}`} className="topbar-item" title="اتصال مباشر بالديليفري">
+            <span className="topbar-item topbar-address" title="العنوان">
+              <span>📍</span> {RESTAURANT_ADDRESS}
+            </span>
+            <span className="topbar-divider">|</span>
+            <span className="topbar-item" title="مواعيد العمل">
+              <span>🕐</span> 9 ص - 3 ص
+            </span>
+            <span className="topbar-divider">|</span>
+            <a href={`tel:${DELIVERY_NUMBER}`} className="topbar-item topbar-phone" title="طلب ديليفري">
               <span>📞</span> {DELIVERY_NUMBER}
             </a>
-            <span className="topbar-divider">|</span>
-            <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer" className="topbar-item topbar-wa" title="طلب عبر واتساب">
-              <span>💬</span> واتساب
-            </a>
-            <span className="topbar-divider">|</span>
-            <span className="topbar-item">
-              <span>🕐</span> يومياً ١٢ ظ - ٢ ص
-            </span>
             <span className="topbar-divider">|</span>
             <button
               type="button"
@@ -397,75 +410,94 @@ function App() {
                 const currentPrice = getItemPrice(item, currentSize);
                 const qtyInCart = getCartQuantity(item.id, currentSize);
 
+                const isInCart = qtyInCart > 0;
+
                 return (
                   <div
                     key={item.id}
-                    className="menu-card"
-                    style={{ animationDelay: `${index * 0.04}s` }}
+                    className={`menu-card ${isInCart ? 'menu-card--in-cart' : ''}`}
+                    style={{ animationDelay: `${index * 0.03}s` }}
                   >
-                    <div className="card-header">
-                      <div className="item-info">
-                        <span className="item-name">{item.name}</span>
+                    <div className="card-top">
+                      <div className="item-header-info">
+                        <h3 className="item-name">{item.name}</h3>
                         {item.description && (
                           <p className="item-description">{item.description}</p>
                         )}
                       </div>
+
                       {!item.has_sizes && (
-                        <span className="item-price">
-                          {item.price}
-                          <span className="currency"> ج.م</span>
-                        </span>
+                        <div className="item-price-tag">
+                          <span className="price-val">{item.price}</span>
+                          <span className="price-curr"> ج.م</span>
+                        </div>
                       )}
                     </div>
 
-                    {/* Size Options */}
+                    {/* Size Selector if item has sizes */}
                     {item.has_sizes && item.sizes?.length > 0 && (
-                      <div className="size-options">
-                        {item.sizes.map(size => (
-                          <button
-                            key={size.name}
-                            className={`size-btn ${currentSize === size.name ? 'selected' : ''}`}
-                            onClick={() => handleSizeSelect(item.id, size.name)}
-                          >
-                            <span className="size-name">{size.name}</span>
-                            <span className="size-price">{size.price} ج.م</span>
-                          </button>
-                        ))}
+                      <div className="card-sizes-block">
+                        <span className="sizes-hint">اختر الحجم:</span>
+                        <div className="size-chips-grid">
+                          {item.sizes.map(size => {
+                            const isSelected = currentSize === size.name;
+                            return (
+                              <button
+                                key={size.name}
+                                type="button"
+                                className={`size-chip ${isSelected ? 'active' : ''}`}
+                                onClick={() => handleSizeSelect(item.id, size.name)}
+                              >
+                                <span className="chip-name">{size.name}</span>
+                                <span className="chip-price">{size.price} ج.م</span>
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
 
-                    <div className="card-actions">
-                      {item.has_sizes && (
-                        <span className="selected-price-display">
-                          {currentPrice} ج.م
-                        </span>
-                      )}
-
-                      {qtyInCart > 0 ? (
-                        <div className="quantity-controls">
-                          <button
-                            className="qty-btn decrease"
-                            onClick={() => updateQuantity(`${item.id}-${currentSize || 'default'}`, -1)}
-                          >
-                            −
-                          </button>
-                          <span className="qty-value">{qtyInCart}</span>
-                          <button
-                            className="qty-btn"
-                            onClick={() => updateQuantity(`${item.id}-${currentSize || 'default'}`, 1)}
-                          >
-                            +
-                          </button>
+                    {/* Card Actions Bottom Row */}
+                    <div className="card-bottom-row">
+                      {item.has_sizes ? (
+                        <div className="size-active-price">
+                          <span className="active-price-label">السعر:</span>
+                          <span className="active-price-val">{currentPrice} <span className="price-curr">ج.م</span></span>
                         </div>
-                      ) : (
-                        <button
-                          className="add-btn"
-                          onClick={() => addToCart(item, category)}
-                        >
-                          <span className="btn-icon">+</span>
-                          أضف للسلة
-                        </button>
-                      )}
+                      ) : <div className="card-bottom-spacer" />}
+
+                      <div className="card-action-container">
+                        {qtyInCart > 0 ? (
+                          <div className="quantity-stepper">
+                            <button
+                              type="button"
+                              className="stepper-btn stepper-dec"
+                              onClick={() => updateQuantity(`${item.id}-${currentSize || 'default'}`, -1)}
+                              aria-label="تقليل"
+                            >
+                              −
+                            </button>
+                            <span className="stepper-qty">{qtyInCart}</span>
+                            <button
+                              type="button"
+                              className="stepper-btn stepper-inc"
+                              onClick={() => updateQuantity(`${item.id}-${currentSize || 'default'}`, 1)}
+                              aria-label="زيادة"
+                            >
+                              +
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            className="add-to-cart-btn"
+                            onClick={() => addToCart(item, category)}
+                          >
+                            <span className="add-plus">+</span>
+                            <span>أضف للطلب</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -492,36 +524,38 @@ function App() {
 
           {/* Footer Grid */}
           <div className="footer-grid">
-            {/* Contact */}
+            {/* Address & Hours */}
             <div className="footer-section">
-              <h4 className="footer-section-title">📞 تواصل معنا</h4>
+              <h4 className="footer-section-title">📍 فرعنا ومواعيد العمل</h4>
               <ul className="footer-list">
-                <li>
-                  <a href={`tel:${DELIVERY_NUMBER}`} className="footer-link">
-                    <span className="footer-link-icon">📱</span>
-                    {DELIVERY_NUMBER}
-                  </a>
+                <li className="footer-info-item">
+                  <span className="footer-link-icon">📌</span>
+                  <span><strong>العنوان:</strong> {RESTAURANT_ADDRESS}</span>
                 </li>
-                <li>
-                  <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer" className="footer-link footer-link--wa">
-                    <span className="footer-link-icon">💬</span>
-                    واتساب للطلبات
-                  </a>
+                <li className="footer-info-item">
+                  <span className="footer-link-icon">🕐</span>
+                  <span><strong>مواعيد العمل:</strong> {WORKING_HOURS}</span>
+                </li>
+                <li className="footer-info-item">
+                  <span className="footer-link-icon">🚚</span>
+                  <span>خدمة التوصيل (ديليفري) متاحة طوال فترة العمل</span>
                 </li>
               </ul>
             </div>
 
-            {/* Working Hours */}
+            {/* Delivery Contact */}
             <div className="footer-section">
-              <h4 className="footer-section-title">🕐 مواعيد العمل</h4>
+              <h4 className="footer-section-title">📞 الطلبات والتوصيل</h4>
               <ul className="footer-list">
-                <li className="footer-info-item">
-                  <span className="footer-link-icon">📅</span>
-                  يومياً من ١٢ ظهراً - ٢ صباحاً
+                <li>
+                  <a href={`tel:${DELIVERY_NUMBER}`} className="footer-link">
+                    <span className="footer-link-icon">📱</span>
+                    <span>خط الديليفري السريع: <strong>{DELIVERY_NUMBER}</strong></span>
+                  </a>
                 </li>
                 <li className="footer-info-item">
-                  <span className="footer-link-icon">🚚</span>
-                  التوصيل متاح طوال فترة العمل
+                  <span className="footer-link-icon">🍽️</span>
+                  <span>صالة مميزة ومكيفة للعائلات والأفراد</span>
                 </li>
               </ul>
             </div>
@@ -531,20 +565,20 @@ function App() {
               <h4 className="footer-section-title">⭐ خدماتنا</h4>
               <ul className="footer-list">
                 <li className="footer-info-item">
-                  <span className="footer-link-icon">🍽️</span>
-                  مشويات على الفحم
+                  <span className="footer-link-icon">🥩</span>
+                  مشويات على الفحم وطواجن شرقية
                 </li>
                 <li className="footer-info-item">
                   <span className="footer-link-icon">🍕</span>
-                  بيتزا وباستا إيطالية
+                  بيتزا إيطالية، كريب، باستا وبرجر
                 </li>
                 <li className="footer-info-item">
                   <span className="footer-link-icon">☕</span>
-                  كافيه ومشروبات ساخنة وباردة
+                  مشروبات ساخنة وباردة وكوكتيلات فريش
                 </li>
                 <li className="footer-info-item">
                   <span className="footer-link-icon">💨</span>
-                  شيشة بنكهات متنوعة
+                  شيشة فاخرة بنكهات خاصة
                 </li>
               </ul>
             </div>
@@ -555,8 +589,9 @@ function App() {
             <a href={`tel:${DELIVERY_NUMBER}`} className="delivery-banner-link">
               <span className="delivery-emoji">🚚</span>
               <div>
-                <strong>اتصل الآن واطلب توصيل لحد باب بيتك!</strong>
+                <strong>اطلب ديليفري يوصلك سخن وطازة لحد باب بيتك!</strong>
                 <span className="delivery-num">{DELIVERY_NUMBER}</span>
+                <span className="delivery-loc-sub">{RESTAURANT_ADDRESS}</span>
               </div>
               <span className="delivery-arrow">←</span>
             </a>
@@ -582,26 +617,6 @@ function App() {
           </div>
         </div>
       </footer>
-
-      {/* ====== FLOATING QUICK CONTACT (When cart is empty) ====== */}
-      {cartTotals.totalItems === 0 && (
-        <aside className="floating-quick-contact" aria-label="أرقام الطلبات والتوصيل السريع">
-          <a href={`tel:${DELIVERY_NUMBER}`} className="quick-btn quick-call" aria-label="اتصال بالديليفري">
-            <span className="quick-icon" aria-hidden="true">📞</span>
-            <span className="quick-text">اتصال {DELIVERY_NUMBER}</span>
-          </a>
-          <a
-            href={`https://wa.me/${WHATSAPP_NUMBER}`}
-            target="_blank"
-            rel="noreferrer"
-            className="quick-btn quick-wa"
-            aria-label="محادثة واتساب للطلبات"
-          >
-            <span className="quick-icon" aria-hidden="true">💬</span>
-            <span className="quick-text">واتساب</span>
-          </a>
-        </aside>
-      )}
 
       {/* ====== FLOATING CART BAR ====== */}
       {cartTotals.totalItems > 0 && !isCartOpen && (
