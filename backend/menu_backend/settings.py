@@ -149,6 +149,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 CSRF_TRUSTED_ORIGINS = [
     'https://*.onrender.com',
     'https://*.vercel.app',
+    'https://*.pythonanywhere.com',
     'http://localhost:3000',
     'http://127.0.0.1:3000',
 ]
