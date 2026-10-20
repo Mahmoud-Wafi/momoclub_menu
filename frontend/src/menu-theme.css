@@ -145,3 +145,37 @@ body { background: #17120e; }
   .app .marquee { overflow: visible; white-space: normal; }
   .app .marquee-track > span + span { display: none; }
 }
+
+/* ---------- footer ---------- */
+.momo-footer { margin-top: 64px; padding: 0 16px 28px; background: #120d09; border-top: 1px solid var(--line); color: var(--text-secondary);
+  font-family: 'IBM Plex Sans Arabic', 'Cairo', sans-serif; --brass: #c9975b; --brass-light: #f0c98a; --ink: #1b130c; --line: rgba(201,151,91,.22); }
+/* ring of stars from the logo, as one thin band */
+.momo-footer .foot-stars { overflow: hidden; white-space: nowrap; text-align: center; letter-spacing: .9em; font-size: .7rem; padding: 14px 0 0;
+  background: linear-gradient(90deg, #8f6a43, #f0c98a); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.momo-footer .foot-inner { max-width: 960px; margin: 0 auto; padding-top: 28px; display: grid; gap: 28px; }
+
+/* the one bold element: the delivery ribbon */
+.momo-footer .foot-order { display: flex; flex-direction: column; align-items: center; gap: 2px; text-decoration: none; text-align: center;
+  padding: 18px 56px; color: var(--ink); background: linear-gradient(90deg, #8f6a43, #e2b574 60%, #f0c98a);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 50%, 100% 100%, 0 100%, 22px 50%); }
+.momo-footer .foot-order-label { font-weight: 600; }
+.momo-footer .foot-order-num { font-family: 'Lalezar', sans-serif; font-size: 2.2rem; line-height: 1.2; letter-spacing: .04em; }
+.momo-footer .foot-order:focus-visible { outline: 2px solid var(--brass-light); outline-offset: 4px; }
+
+.momo-footer .foot-info { display: grid; margin: 0; }
+.momo-footer .foot-info > div { display: grid; grid-template-columns: 7.5rem 1fr; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.momo-footer dt { color: var(--brass-light); font-weight: 600; }
+.momo-footer dd { margin: 0; line-height: 1.8; max-width: 60ch; }
+@media (max-width: 560px) { .momo-footer .foot-info > div { grid-template-columns: 1fr; gap: 2px; } .momo-footer .foot-order { padding-inline: 40px; } }
+
+.momo-footer .foot-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.momo-footer .foot-link { padding: 10px 20px; border: 1px solid var(--brass); border-radius: 8px; color: var(--brass-light); text-decoration: none; font-weight: 600; }
+.momo-footer .foot-link:hover { background: var(--brass); color: var(--ink); }
+.momo-footer .foot-link:focus-visible { outline: 2px solid var(--brass-light); outline-offset: 2px; }
+
+.momo-footer .foot-bottom { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; padding-top: 8px; }
+.momo-footer .foot-brand { display: flex; align-items: center; gap: 14px; }
+.momo-footer .foot-logo { width: 52px; height: 52px; border-radius: 50%; background: #fff; object-fit: cover; box-shadow: 0 0 0 2px var(--brass); }
+.momo-footer .foot-name { font-family: 'Lalezar', sans-serif; font-size: 1.4rem; color: var(--brass-light); line-height: 1.2; }
+.momo-footer .foot-copy, .momo-footer .foot-credit { font-size: .82rem; color: var(--text-muted); }
+.momo-footer .foot-credit strong { color: var(--text-secondary); font-weight: 600; }

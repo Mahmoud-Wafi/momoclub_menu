@@ -26,6 +26,11 @@ const checkIsManagerRoute = () => {
   );
 };
 
+// Arabic-friendly matching: ignore diacritics, unify alef/yaa/taa-marbuta forms
+const normalize = (t = '') => String(t).toLowerCase()
+  .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+  .replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').trim();
+
 // Open 9:00 to 03:00 Cairo time
 const isOpenNow = () => {
   const h = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Cairo' })).getHours();
@@ -181,14 +186,20 @@ function App() {
 
   // Filter items by search
   const filteredCategories = useMemo(() => {
-    if (!searchQuery.trim()) return categories;
-    const query = searchQuery.trim().toLowerCase();
-    return categories.map(cat => ({
-      ...cat,
-      items: cat.items.filter(item =>
-        item.name.toLowerCase().includes(query)
-      )
-    })).filter(cat => cat.items.length > 0);
+    const query = normalize(searchQuery);
+    if (!query) return categories;
+    return categories
+      .map(cat => {
+        // a matching category name shows the whole category
+        if (normalize(cat.name).includes(query)) return cat;
+        return {
+          ...cat,
+          items: cat.items.filter(item =>
+            normalize(item.name).includes(query) || normalize(item.description).includes(query)
+          )
+        };
+      })
+      .filter(cat => cat.items.length > 0);
   }, [categories, searchQuery]);
 
   // Scroll to category section
@@ -363,7 +374,7 @@ function App() {
             <input
               type="text"
               className="search-input"
-              placeholder="ابحث عن أي صنف في المنيو..."
+              placeholder="ابحث عن صنف أو قسم..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -528,106 +539,36 @@ function App() {
         ))}
       </main>
 
-      {/* ====== PREMIUM FOOTER ====== */}
-      <footer className="site-footer">
-        <div className="footer-inner">
-          {/* Footer Top */}
-          <div className="footer-top">
-            <div className="footer-brand">
-              <img src="/logo.jpg" alt="MOMO CLUB" className="footer-logo" />
+      {/* ====== FOOTER ====== */}
+      <footer className="momo-footer">
+        <div className="foot-stars" aria-hidden="true">{'★'.repeat(21)}</div>
+        <div className="foot-inner">
+          <a className="foot-order" href={`tel:${DELIVERY_NUMBER}`}>
+            <span className="foot-order-label">اطلب ديليفري يوصلك سخن لحد البيت</span>
+            <span className="foot-order-num" dir="ltr">{DELIVERY_NUMBER}</span>
+          </a>
+
+          <dl className="foot-info">
+            <div><dt>العنوان</dt><dd>{RESTAURANT_ADDRESS}</dd></div>
+            <div><dt>مواعيد العمل</dt><dd>{WORKING_HOURS}</dd></div>
+            <div><dt>الخدمة</dt><dd>داخل المطعم تُضاف خدمة 14%. التوصيل بدون خدمة.</dd></div>
+            <div><dt>مطبخنا</dt><dd>مشويات على الفحم، طواجن، بيتزا، كريب، باستا، برجر، مشروبات وشيشة.</dd></div>
+          </dl>
+
+          <div className="foot-actions">
+            <a className="foot-link" href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noopener noreferrer">راسلنا على واتساب</a>
+            <a className="foot-link" href={`tel:${DELIVERY_NUMBER}`}>اتصل بنا</a>
+          </div>
+
+          <div className="foot-bottom">
+            <div className="foot-brand">
+              <img src="/logo.jpg" alt="" className="foot-logo" />
               <div>
-                <div className="footer-brand-name">MOMO CLUB</div>
-                <div className="footer-brand-sub">Cafe & Restaurant</div>
+                <div className="foot-name">MOMO CLUB</div>
+                <div className="foot-copy">© {new Date().getFullYear()} جميع الحقوق محفوظة</div>
               </div>
             </div>
-            <p className="footer-tagline">أفضل المشويات والأكلات الشرقية والغربية مع أجود الخامات وأطعم النكهات 🔥</p>
-          </div>
-
-          {/* Footer Grid */}
-          <div className="footer-grid">
-            {/* Address & Hours */}
-            <div className="footer-section">
-              <h4 className="footer-section-title">📍 فرعنا ومواعيد العمل</h4>
-              <ul className="footer-list">
-                <li className="footer-info-item">
-                  <span className="footer-link-icon">📌</span>
-                  <span><strong>العنوان:</strong> {RESTAURANT_ADDRESS}</span>
-                </li>
-                <li className="footer-info-item">
-                  <span className="footer-link-icon">🕐</span>
-                  <span><strong>مواعيد العمل:</strong> {WORKING_HOURS}</span>
-                </li>
-                <li className="footer-info-item">
-                  <span className="footer-link-icon">🚚</span>
-                  <span>خدمة التوصيل (ديليفري) متاحة طوال فترة العمل</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Delivery Contact */}
-            <div className="footer-section">
-              <h4 className="footer-section-title">📞 الطلبات والتوصيل</h4>
-              <ul className="footer-list">
-                <li>
-                  <a href={`tel:${DELIVERY_NUMBER}`} className="footer-link">
-                    <span className="footer-link-icon">📱</span>
-                    <span>خط الديليفري السريع: <strong>{DELIVERY_NUMBER}</strong></span>
-                  </a>
-                </li>
-                <li className="footer-info-item">
-                  <span className="footer-link-icon">🍽️</span>
-                  <span>صالة مميزة ومكيفة للعائلات والأفراد</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Services */}
-            <div className="footer-section">
-              <h4 className="footer-section-title">⭐ خدماتنا</h4>
-              <ul className="footer-list">
-                <li className="footer-info-item">
-                  <span className="footer-link-icon">🥩</span>
-                  مشويات على الفحم وطواجن شرقية
-                </li>
-                <li className="footer-info-item">
-                  <span className="footer-link-icon">🍕</span>
-                  بيتزا إيطالية، كريب، باستا وبرجر
-                </li>
-                <li className="footer-info-item">
-                  <span className="footer-link-icon">☕</span>
-                  مشروبات ساخنة وباردة وكوكتيلات فريش
-                </li>
-                <li className="footer-info-item">
-                  <span className="footer-link-icon">💨</span>
-                  شيشة فاخرة بنكهات خاصة
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Delivery Banner */}
-          <div className="footer-delivery-banner">
-            <a href={`tel:${DELIVERY_NUMBER}`} className="delivery-banner-link">
-              <span className="delivery-emoji">🚚</span>
-              <div>
-                <strong>اطلب ديليفري يوصلك سخن وطازة لحد باب بيتك!</strong>
-                <span className="delivery-num">{DELIVERY_NUMBER}</span>
-                <span className="delivery-loc-sub">{RESTAURANT_ADDRESS}</span>
-              </div>
-              <span className="delivery-arrow">←</span>
-            </a>
-          </div>
-
-          {/* Copyright & Designer */}
-          <div className="footer-bottom">
-            <p className="footer-copyright">© {new Date().getFullYear()} MOMO CLUB Cafe & Restaurant — جميع الحقوق محفوظة</p>
-            <div className="footer-designer-wrapper">
-              <div className="footer-designer-badge" dir="ltr">
-                <span className="designer-icon">✨</span>
-                <span className="designer-text">Designed & Developed by :</span>
-                <strong className="designer-name">Eng. Mahmoud Wafi</strong>
-              </div>
-            </div>
+            <div className="foot-credit" dir="ltr">Designed & Developed by <strong>Eng. Mahmoud Wafi</strong></div>
           </div>
         </div>
       </footer>
