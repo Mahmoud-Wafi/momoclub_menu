@@ -113,6 +113,8 @@ export default function ManagerDashboard({ onExitToMenu, onMenuUpdated }) {
         localStorage.setItem('momo_manager_user', username);
         setIsAuthenticated(true);
         showToast('مرحباً بك في لوحة تحكم المدير 👋');
+      } else if (response.ok && data.success) {
+        setLoginError('بيانات الدخول صحيحة، لكن السيرفر (Backend) لم يتم تحديثه بعد. أعد نشر الباك إند ثم حاول مرة أخرى.');
       } else {
         setLoginError(data.message || 'بيانات الدخول غير صحيحة');
       }
