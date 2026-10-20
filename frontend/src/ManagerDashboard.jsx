@@ -418,7 +418,7 @@ export default function ManagerDashboard({ onExitToMenu, onMenuUpdated }) {
       <header className="manager-header">
         <div className="manager-header-inner">
           <div className="brand-info">
-            <span className="brand-icon">⚙️</span>
+            <img src="/logo.jpg" alt="Logo" style={{ width: 45, height: 45, borderRadius: '50%', border: '2px solid #D4A017', objectFit: 'cover' }} />
             <div>
               <h1 className="brand-name">لوحة تحكم المدير | MOMO CLUB</h1>
               <p className="brand-status">متصل كـ: <strong>{username}</strong> (صلاحيات كاملة)</p>

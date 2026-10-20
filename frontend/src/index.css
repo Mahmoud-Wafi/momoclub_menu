@@ -230,6 +230,22 @@ body {
   gap: var(--space-sm);
 }
 
+.brand-logo-img {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--momo-gold);
+  box-shadow: 0 0 16px rgba(212, 160, 23, 0.45);
+  background: #ffffff;
+  padding: 2px;
+  transition: transform 0.3s ease;
+}
+
+.brand-logo-img:hover {
+  transform: scale(1.08) rotate(3deg);
+}
+
 .logo-text {
   font-size: 1.8rem;
   font-weight: 900;

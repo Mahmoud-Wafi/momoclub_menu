@@ -276,9 +276,10 @@ function App() {
         <div className="header-content">
           <div className="header-top">
             <div className="logo-container">
+              <img src="/logo.jpg" alt="MOMO CLUB" className="brand-logo-img" />
               <div>
                 <div className="logo-text">MOMO CLUB</div>
-                <div className="logo-subtitle">المنيو الإلكتروني</div>
+                <div className="logo-subtitle">Cafe & Restaurant</div>
               </div>
             </div>
           </div>
