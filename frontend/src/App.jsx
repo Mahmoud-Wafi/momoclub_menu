@@ -5,6 +5,7 @@ import ManagerDashboard from './ManagerDashboard';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
 const WHATSAPP_NUMBER = '201127603628';
+const DELIVERY_NUMBER = '01127603628';
 
 const checkIsManagerRoute = () => {
   const path = window.location.pathname.toLowerCase();
@@ -22,10 +23,8 @@ const checkIsManagerRoute = () => {
 };
 
 function App() {
-  // View mode: 'menu' (customer view) or 'manager' (dashboard only accessible via /manager or /admin)
   const [viewMode, setViewMode] = useState(() => (checkIsManagerRoute() ? 'manager' : 'menu'));
 
-  // Listen to browser navigation changes
   useEffect(() => {
     const handlePopState = () => {
       setViewMode(checkIsManagerRoute() ? 'manager' : 'menu');
@@ -55,9 +54,19 @@ function App() {
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedSizes, setSelectedSizes] = useState({});
+  const [headerShrink, setHeaderShrink] = useState(false);
 
   const categoryNavRef = useRef(null);
   const sectionRefs = useRef({});
+
+  // Shrink header on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      setHeaderShrink(window.scrollY > 80);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Fetch menu data
   const fetchMenu = useCallback(async () => {
@@ -249,7 +258,7 @@ function App() {
     window.open(url, '_blank');
   }, [cart, orderType, tableNumber, customerName, customerAddress, buildWhatsAppMessage, showToast]);
 
-  // If in manager dashboard mode
+  // Manager mode
   if (viewMode === 'manager') {
     return (
       <ManagerDashboard
@@ -259,10 +268,11 @@ function App() {
     );
   }
 
-  // Loading state
+  // Loading
   if (loading) {
     return (
       <div className="loading-container">
+        <img src="/logo.jpg" alt="MOMO CLUB" className="loading-logo" />
         <div className="loading-spinner"></div>
         <p className="loading-text">جاري تحميل المنيو...</p>
       </div>
@@ -271,10 +281,37 @@ function App() {
 
   return (
     <div className="app">
-      {/* ====== HEADER ====== */}
-      <header className="header">
+      {/* ====== HERO HEADER ====== */}
+      <header className={`header ${headerShrink ? 'header--shrink' : ''}`}>
+        {/* Top Bar - Contact Info */}
+        <div className={`header-topbar ${headerShrink ? 'hide' : ''}`}>
+          <div className="topbar-inner">
+            <a href={`tel:${DELIVERY_NUMBER}`} className="topbar-item" title="اتصال مباشر بالديليفري">
+              <span>📞</span> {DELIVERY_NUMBER}
+            </a>
+            <span className="topbar-divider">|</span>
+            <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer" className="topbar-item topbar-wa" title="طلب عبر واتساب">
+              <span>💬</span> واتساب
+            </a>
+            <span className="topbar-divider">|</span>
+            <span className="topbar-item">
+              <span>🕐</span> يومياً ١٢ ظ - ٢ ص
+            </span>
+            <span className="topbar-divider">|</span>
+            <button
+              type="button"
+              className="topbar-admin-link"
+              onClick={() => setViewMode('manager')}
+              title="لوحة الإدارة"
+            >
+              🔒 Admin
+            </button>
+          </div>
+        </div>
+
         <div className="header-content">
-          <div className="header-top">
+          {/* Brand Row */}
+          <div className="header-brand-row">
             <div className="logo-container">
               <img src="/logo.jpg" alt="MOMO CLUB" className="brand-logo-img" />
               <div>
@@ -282,6 +319,14 @@ function App() {
                 <div className="logo-subtitle">Cafe & Restaurant</div>
               </div>
             </div>
+
+            {/* Cart Button in header */}
+            <button className="header-cart-btn" onClick={() => setIsCartOpen(true)}>
+              <span className="header-cart-icon">🛒</span>
+              {cartTotals.totalItems > 0 && (
+                <span className="header-cart-count">{cartTotals.totalItems}</span>
+              )}
+            </button>
           </div>
 
           {/* Search */}
@@ -290,10 +335,13 @@ function App() {
             <input
               type="text"
               className="search-input"
-              placeholder="ابحث عن صنف..."
+              placeholder="ابحث عن أي صنف في المنيو..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+            {searchQuery && (
+              <button className="search-clear" onClick={() => setSearchQuery('')}>✕</button>
+            )}
           </div>
 
           {/* Category Navigation */}
@@ -353,10 +401,15 @@ function App() {
                   <div
                     key={item.id}
                     className="menu-card"
-                    style={{ animationDelay: `${index * 0.05}s` }}
+                    style={{ animationDelay: `${index * 0.04}s` }}
                   >
                     <div className="card-header">
-                      <span className="item-name">{item.name}</span>
+                      <div className="item-info">
+                        <span className="item-name">{item.name}</span>
+                        {item.description && (
+                          <p className="item-description">{item.description}</p>
+                        )}
+                      </div>
                       {!item.has_sizes && (
                         <span className="item-price">
                           {item.price}
@@ -409,8 +462,8 @@ function App() {
                           className="add-btn"
                           onClick={() => addToCart(item, category)}
                         >
-                          <span className="btn-icon">➕</span>
-                          إضافة
+                          <span className="btn-icon">+</span>
+                          أضف للسلة
                         </button>
                       )}
                     </div>
@@ -421,6 +474,134 @@ function App() {
           </section>
         ))}
       </main>
+
+      {/* ====== PREMIUM FOOTER ====== */}
+      <footer className="site-footer">
+        <div className="footer-inner">
+          {/* Footer Top */}
+          <div className="footer-top">
+            <div className="footer-brand">
+              <img src="/logo.jpg" alt="MOMO CLUB" className="footer-logo" />
+              <div>
+                <div className="footer-brand-name">MOMO CLUB</div>
+                <div className="footer-brand-sub">Cafe & Restaurant</div>
+              </div>
+            </div>
+            <p className="footer-tagline">أفضل المشويات والأكلات الشرقية والغربية مع أجود الخامات وأطعم النكهات 🔥</p>
+          </div>
+
+          {/* Footer Grid */}
+          <div className="footer-grid">
+            {/* Contact */}
+            <div className="footer-section">
+              <h4 className="footer-section-title">📞 تواصل معنا</h4>
+              <ul className="footer-list">
+                <li>
+                  <a href={`tel:${DELIVERY_NUMBER}`} className="footer-link">
+                    <span className="footer-link-icon">📱</span>
+                    {DELIVERY_NUMBER}
+                  </a>
+                </li>
+                <li>
+                  <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer" className="footer-link footer-link--wa">
+                    <span className="footer-link-icon">💬</span>
+                    واتساب للطلبات
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Working Hours */}
+            <div className="footer-section">
+              <h4 className="footer-section-title">🕐 مواعيد العمل</h4>
+              <ul className="footer-list">
+                <li className="footer-info-item">
+                  <span className="footer-link-icon">📅</span>
+                  يومياً من ١٢ ظهراً - ٢ صباحاً
+                </li>
+                <li className="footer-info-item">
+                  <span className="footer-link-icon">🚚</span>
+                  التوصيل متاح طوال فترة العمل
+                </li>
+              </ul>
+            </div>
+
+            {/* Services */}
+            <div className="footer-section">
+              <h4 className="footer-section-title">⭐ خدماتنا</h4>
+              <ul className="footer-list">
+                <li className="footer-info-item">
+                  <span className="footer-link-icon">🍽️</span>
+                  مشويات على الفحم
+                </li>
+                <li className="footer-info-item">
+                  <span className="footer-link-icon">🍕</span>
+                  بيتزا وباستا إيطالية
+                </li>
+                <li className="footer-info-item">
+                  <span className="footer-link-icon">☕</span>
+                  كافيه ومشروبات ساخنة وباردة
+                </li>
+                <li className="footer-info-item">
+                  <span className="footer-link-icon">💨</span>
+                  شيشة بنكهات متنوعة
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Delivery Banner */}
+          <div className="footer-delivery-banner">
+            <a href={`tel:${DELIVERY_NUMBER}`} className="delivery-banner-link">
+              <span className="delivery-emoji">🚚</span>
+              <div>
+                <strong>اتصل الآن واطلب توصيل لحد باب بيتك!</strong>
+                <span className="delivery-num">{DELIVERY_NUMBER}</span>
+              </div>
+              <span className="delivery-arrow">←</span>
+            </a>
+          </div>
+
+          {/* Copyright & Designer & Admin Link */}
+          <div className="footer-bottom">
+            <p className="footer-copyright">© {new Date().getFullYear()} MOMO CLUB Cafe & Restaurant — جميع الحقوق محفوظة</p>
+            <p className="footer-designer">
+              Designed & Developed by <strong className="designer-name">Eng. Mahmoud Wafi</strong>
+            </p>
+            <div className="footer-bottom-actions">
+              <span className="footer-powered">صُنع بـ ❤️ لعملائنا الكرام</span>
+              <button
+                type="button"
+                className="footer-admin-btn"
+                onClick={() => setViewMode('manager')}
+                title="لوحة تحكم المدير"
+              >
+                🔒 لوحة الإدارة (Admin)
+              </button>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* ====== FLOATING QUICK CONTACT (When cart is empty) ====== */}
+      {cartTotals.totalItems === 0 && (
+        <aside className="floating-quick-contact" aria-label="أرقام الطلبات والتوصيل السريع">
+          <a href={`tel:${DELIVERY_NUMBER}`} className="quick-btn quick-call" aria-label="اتصال بالديليفري">
+            <span className="quick-icon" aria-hidden="true">📞</span>
+            <span className="quick-text">اتصال {DELIVERY_NUMBER}</span>
+          </a>
+          <a
+            href={`https://wa.me/${WHATSAPP_NUMBER}`}
+            target="_blank"
+            rel="noreferrer"
+            className="quick-btn quick-wa"
+            aria-label="محادثة واتساب للطلبات"
+          >
+            <span className="quick-icon" aria-hidden="true">💬</span>
+            <span className="quick-text">واتساب</span>
+          </a>
+        </aside>
+      )}
 
       {/* ====== FLOATING CART BAR ====== */}
       {cartTotals.totalItems > 0 && !isCartOpen && (
@@ -447,12 +628,10 @@ function App() {
           <div className="cart-overlay" onClick={() => setIsCartOpen(false)} />
           <div className="cart-modal">
             <div className="cart-modal-content">
-              {/* Handle */}
               <div className="cart-handle">
                 <div className="cart-handle-bar"></div>
               </div>
 
-              {/* Header */}
               <div className="cart-header">
                 <h2>🛒 سلة المشتريات</h2>
                 <button className="close-cart-btn" onClick={() => setIsCartOpen(false)}>
@@ -460,7 +639,6 @@ function App() {
                 </button>
               </div>
 
-              {/* Cart Items */}
               {cart.length === 0 ? (
                 <div className="empty-cart">
                   <div className="empty-icon">🛒</div>
@@ -505,7 +683,6 @@ function App() {
                     ))}
                   </div>
 
-                  {/* Summary */}
                   <div className="cart-summary">
                     <div className="summary-row">
                       <span>عدد الأصناف</span>
