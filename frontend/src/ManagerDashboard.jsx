@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
+import './dashboard-theme.css';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
 
@@ -8,8 +9,8 @@ export default function ManagerDashboard({ onExitToMenu, onMenuUpdated }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('momo_manager_auth') === 'true';
   });
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin123@');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 

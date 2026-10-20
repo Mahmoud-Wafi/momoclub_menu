@@ -1,0 +1,61 @@
+/* MOMO CLUB manager dashboard: same bronze identity as the menu, tuned for daily back-office use.
+   Scoped to the dashboard roots so the customer menu is unaffected. Import after index.css. */
+@import url('https://fonts.googleapis.com/css2?family=Lalezar&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
+
+.manager-dashboard, .manager-login-screen {
+  --brass: #c9975b; --brass-light: #f0c98a; --ink: #1b130c; --line: rgba(201,151,91,.22);
+  --momo-green: #b88547; --momo-green-light: #e2b574; --momo-green-dark: #8f6a43;
+  --bg-primary: #17120e; --bg-secondary: #1d1710; --bg-card: #231b13; --bg-card-hover: #2b2219; --bg-elevated: #30261b;
+  --text-primary: #f5ece0; --text-secondary: #bdae9b; --text-muted: #85786a;
+  --border-color: var(--line); --gradient-brand: linear-gradient(90deg,#8f6a43,#e2b574);
+  --shadow-glow: none; --gradient-card: none;
+  font-family: 'IBM Plex Sans Arabic', 'Cairo', sans-serif; background: var(--bg-primary);
+}
+.manager-dashboard button, .manager-dashboard input, .manager-dashboard select, .manager-dashboard textarea,
+.manager-login-screen button, .manager-login-screen input { font-family: inherit; }
+
+/* header */
+.manager-header { background: rgba(23,18,14,.94); border-bottom: 1px solid var(--line); backdrop-filter: blur(10px); }
+.brand-name, .login-title, .modal-header h2, .modal-header h3 { font-family: 'Lalezar', sans-serif; font-weight: 400; color: var(--brass-light); }
+.brand-status { color: var(--text-secondary); }
+
+/* stats: one strip, numbers first, no icon tiles */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--bg-card); }
+.stat-card { background: none; border: 0; border-radius: 0; box-shadow: none; transform: none; border-inline-start: 1px solid var(--line); }
+.stat-card:first-child { border-inline-start: 0; }
+.stat-icon { display: none; }
+.stat-number { font-family: 'Lalezar', sans-serif; font-weight: 400; font-size: 2rem; color: var(--brass-light); font-variant-numeric: tabular-nums; }
+.stat-label { color: var(--text-secondary); }
+@media (max-width: 640px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .stat-card:nth-child(3) { border-inline-start: 0; } .stat-card:nth-child(n+3) { border-top: 1px solid var(--line); } }
+
+/* filters */
+.chip, .status-chip { background: none; border: 1px solid var(--line); border-radius: 8px; color: var(--text-secondary); box-shadow: none; }
+.chip.active, .status-chip.active { background: var(--brass); border-color: var(--brass); color: var(--ink); font-weight: 700; }
+.manager-search-input { background: var(--bg-card); border: 1px solid var(--line); border-radius: 10px; color: var(--text-primary); }
+.manager-search-input:focus { border-color: var(--brass); outline: none; }
+
+/* items: flat list rows instead of floating cards */
+.manager-items-grid { display: grid; grid-template-columns: 1fr; gap: 0; }
+@media (min-width: 1100px) { .manager-items-grid { grid-template-columns: 1fr 1fr; gap: 0 32px; } }
+.manager-item-card { background: none; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; box-shadow: none; transform: none; padding: 14px 0; }
+.manager-item-card:hover { background: var(--bg-card); }
+.manager-item-card.unavailable-card { opacity: .55; }
+.item-title { font-weight: 600; }
+.item-badge-category { background: none; border: 1px solid var(--line); color: var(--text-secondary); border-radius: 6px; }
+.single-price, .size-price-tag { color: var(--brass-light); font-variant-numeric: tabular-nums; }
+.toggle-availability-btn { border-radius: 8px; font-weight: 600; }
+
+/* actions */
+.btn-primary-action, .btn-save, .btn-save-cat, .login-submit-btn { background: var(--brass); color: var(--ink); border: 0; box-shadow: none; font-weight: 700; border-radius: 10px; }
+.btn-secondary-action, .btn-cancel, .btn-cancel-cat, .btn-refresh, .back-to-menu-btn, .view-menu-btn { background: none; border: 1px solid var(--line); color: var(--text-primary); border-radius: 10px; }
+.action-btn-delete, .btn-delete-confirm, .btn-del-sm { background: none; color: #e0674a; border: 1px solid rgba(224,103,74,.4); }
+.btn-delete-confirm { background: #c8472b; color: #fff; border: 0; }
+
+/* modals + login */
+.modal-container, .manager-login-card { background: var(--bg-secondary); border: 1px solid var(--line); border-top: 2px solid var(--brass); border-radius: 14px; }
+.modal-backdrop { background: rgba(10,7,4,.75); }
+.form-group input, .form-group select, .form-group textarea { background: var(--bg-card); border: 1px solid var(--line); border-radius: 10px; color: var(--text-primary); }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--brass); outline: none; }
+
+:is(.manager-dashboard, .manager-login-screen) :is(button, a, input, select, textarea):focus-visible { outline: 2px solid var(--brass-light); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .manager-dashboard *, .manager-login-screen * { animation: none !important; transition: none !important; } }
