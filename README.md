@@ -15,7 +15,7 @@
 لوحة تحكم المدير مخصصة لإدارة المنيو بالكامل (إضافة، تعديل، حذف، وتغيير حالة التوفر):
 
 - **اسم المستخدم (Username):** `admin`
-- **كلمة المرور (Password):** `admin123@`
+- **كلمة المرور (Password):** غير منشورة هنا. أنشئ/غيّر كلمة المرور بـ `python manage.py changepassword admin`
 
 > 💡 **طرق الوصول للوحة الإدارة (تم إخفاء الزر من واجهة العملاء):**
 > 1. **رابط لوحة المدير المباشر:** [http://localhost:3000/manager](http://localhost:3000/manager) (أو [http://localhost:3000/admin](http://localhost:3000/admin))
@@ -175,3 +175,12 @@ cd frontend
 npm run build
 ```
 سيتم حفظ الملفات المحسنة داخل مجلد `frontend/build/`.
+
+
+---
+
+## 🔒 الأمان (Security)
+
+- القراءة (المنيو) عامة، أما **الإضافة/التعديل/الحذف** فتتطلب توكن مدير (`Authorization: Token ...`) يُرجَع من `/api/auth/login/`.
+- متغيرات البيئة للإنتاج: `DJANGO_SECRET_KEY` (إلزامي عملياً)، `DJANGO_ALLOWED_HOSTS`، `CORS_ALLOWED_ORIGINS`، `DJANGO_DEBUG=0`.
+- بعد النشر نفّذ: `python manage.py migrate` ثم `python manage.py changepassword admin`.

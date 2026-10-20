@@ -21,12 +21,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-im%w@ntc8f_g+6^jyhk*8rw9xf_ef)1g+g@1njq9mbtn8%uxy&"
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY",
+    # legacy fallback so existing deploys keep working: SET DJANGO_SECRET_KEY in production
+    "django-insecure-im%w@ntc8f_g+6^jyhk*8rw9xf_ef)1g+g@1njq9mbtn8%uxy&",
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DJANGO_DEBUG", "0") == "1"
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',')
 
 
 # Application definition
@@ -40,6 +44,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # Third party
     "rest_framework",
+    "rest_framework.authtoken",
     "corsheaders",
     # Local
     "menu",
@@ -145,7 +150,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # CORS settings
-CORS_ALLOW_ALL_ORIGINS = True
+# Writes are protected by token auth, so open CORS is safe for the public read API.
+# Lock it to your frontend by setting CORS_ALLOWED_ORIGINS="https://your-site.com,https://..."
+_cors = [o.strip() for o in os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if o.strip()]
+CORS_ALLOWED_ORIGINS = _cors
+CORS_ALLOW_ALL_ORIGINS = not _cors
 CSRF_TRUSTED_ORIGINS = [
     'https://*.onrender.com',
     'https://*.vercel.app',
@@ -158,7 +167,11 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # REST Framework
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
+    'DEFAULT_THROTTLE_RATES': {'login': '10/min'},
 }

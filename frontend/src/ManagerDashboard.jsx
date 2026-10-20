@@ -2,12 +2,18 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import './dashboard-theme.css';
 
+const TOKEN_KEY = 'momo_manager_token';
+const authHeaders = () => {
+  const t = localStorage.getItem(TOKEN_KEY);
+  return t ? { Authorization: `Token ${t}` } : {};
+};
+
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
 
 export default function ManagerDashboard({ onExitToMenu, onMenuUpdated }) {
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem('momo_manager_auth') === 'true';
+    return !!localStorage.getItem(TOKEN_KEY);
   });
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -62,8 +68,8 @@ export default function ManagerDashboard({ onExitToMenu, onMenuUpdated }) {
     setLoading(true);
     try {
       const [catsRes, itemsRes] = await Promise.all([
-        fetch(`${API_BASE}/categories/`),
-        fetch(`${API_BASE}/items/`)
+        fetch(`${API_BASE}/categories/`, { headers: authHeaders() }),
+        fetch(`${API_BASE}/items/`, { headers: authHeaders() })
       ]);
 
       if (catsRes.ok && itemsRes.ok) {
@@ -102,8 +108,8 @@ export default function ManagerDashboard({ onExitToMenu, onMenuUpdated }) {
       });
 
       const data = await response.json();
-      if (response.ok && data.success) {
-        localStorage.setItem('momo_manager_auth', 'true');
+      if (response.ok && data.success && data.token) {
+        localStorage.setItem(TOKEN_KEY, data.token);
         localStorage.setItem('momo_manager_user', username);
         setIsAuthenticated(true);
         showToast('مرحباً بك في لوحة تحكم المدير 👋');
@@ -118,7 +124,8 @@ export default function ManagerDashboard({ onExitToMenu, onMenuUpdated }) {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('momo_manager_auth');
+    fetch(`${API_BASE}/auth/logout/`, { method: 'POST', headers: authHeaders() }).catch(() => {});
+    localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem('momo_manager_user');
     setIsAuthenticated(false);
     showToast('تم تسجيل الخروج بنجاح');
@@ -130,7 +137,7 @@ export default function ManagerDashboard({ onExitToMenu, onMenuUpdated }) {
     try {
       const res = await fetch(`${API_BASE}/items/${item.id}/`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ is_available: newStatus })
       });
 
@@ -231,7 +238,7 @@ export default function ManagerDashboard({ onExitToMenu, onMenuUpdated }) {
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify(payload)
       });
 
@@ -256,7 +263,8 @@ export default function ManagerDashboard({ onExitToMenu, onMenuUpdated }) {
     try {
       if (deleteConfirm.type === 'item') {
         const res = await fetch(`${API_BASE}/items/${deleteConfirm.id}/`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          headers: authHeaders()
         });
         if (res.ok) {
           showToast(`تم حذف الصنف "${deleteConfirm.name}"`);
@@ -267,7 +275,8 @@ export default function ManagerDashboard({ onExitToMenu, onMenuUpdated }) {
         }
       } else if (deleteConfirm.type === 'category') {
         const res = await fetch(`${API_BASE}/categories/${deleteConfirm.id}/`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          headers: authHeaders()
         });
         if (res.ok) {
           showToast(`تم حذف القسم "${deleteConfirm.name}"`);
@@ -300,7 +309,7 @@ export default function ManagerDashboard({ onExitToMenu, onMenuUpdated }) {
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({
           name: categoryFormData.name.trim(),
           icon: categoryFormData.icon.trim() || '🍽️',

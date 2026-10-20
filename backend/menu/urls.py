@@ -9,5 +9,6 @@ router.register(r'items', views.MenuItemViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('menu/', views.menu_full, name='menu-full'),
+    path('auth/logout/', views.manager_logout, name='manager-logout'),
     path('auth/login/', views.manager_login, name='manager-login'),
 ]
