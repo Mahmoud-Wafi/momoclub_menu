@@ -310,15 +310,6 @@ function App() {
             <a href={`tel:${DELIVERY_NUMBER}`} className="topbar-item topbar-phone" title="طلب ديليفري">
               <span>📞</span> {DELIVERY_NUMBER}
             </a>
-            <span className="topbar-divider">|</span>
-            <button
-              type="button"
-              className="topbar-admin-link"
-              onClick={() => setViewMode('manager')}
-              title="لوحة الإدارة"
-            >
-              🔒 Admin
-            </button>
           </div>
         </div>
 
@@ -597,22 +588,15 @@ function App() {
             </a>
           </div>
 
-          {/* Copyright & Designer & Admin Link */}
+          {/* Copyright & Designer */}
           <div className="footer-bottom">
             <p className="footer-copyright">© {new Date().getFullYear()} MOMO CLUB Cafe & Restaurant — جميع الحقوق محفوظة</p>
-            <p className="footer-designer">
-              Designed & Developed by <strong className="designer-name">Eng. Mahmoud Wafi</strong>
-            </p>
-            <div className="footer-bottom-actions">
-              <span className="footer-powered">صُنع بـ ❤️ لعملائنا الكرام</span>
-              <button
-                type="button"
-                className="footer-admin-btn"
-                onClick={() => setViewMode('manager')}
-                title="لوحة تحكم المدير"
-              >
-                🔒 لوحة الإدارة (Admin)
-              </button>
+            <div className="footer-designer-wrapper">
+              <div className="footer-designer-badge" dir="ltr">
+                <span className="designer-icon">✨</span>
+                <span className="designer-text">Designed & Developed by :</span>
+                <strong className="designer-name">Eng. Mahmoud Wafi</strong>
+              </div>
             </div>
           </div>
         </div>
