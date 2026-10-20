@@ -1,0 +1,147 @@
+/* MOMO CLUB customer theme: bronze brand from the logo, printed-menu layout.
+   Scoped to .app so the Manager dashboard keeps its own styling.
+   Import AFTER index.css. */
+@import url('https://fonts.googleapis.com/css2?family=Lalezar&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
+
+.app {
+  /* palette sampled from the logo */
+  --brass: #c9975b;
+  --brass-light: #f0c98a;
+  --brass-dark: #8f6a43;
+  --ink: #1b130c;
+  --line: rgba(201, 151, 91, 0.22);
+
+  /* remap the old tokens so every existing rule recolors */
+  --momo-green: #b88547;
+  --momo-green-light: #e2b574;
+  --momo-green-dark: #8f6a43;
+  --momo-red: #c8472b;
+  --momo-red-light: #d9613f;
+  --momo-gold: #f0c98a;
+  --bg-primary: #17120e;
+  --bg-secondary: #1d1710;
+  --bg-card: #231b13;
+  --bg-card-hover: #2b2219;
+  --bg-elevated: #30261b;
+  --bg-glass: rgba(23, 18, 14, 0.94);
+  --text-primary: #f5ece0;
+  --text-secondary: #bdae9b;
+  --text-muted: #85786a;
+  --text-accent: #e2b574;
+  --border-color: var(--line);
+  --border-accent: rgba(226, 181, 116, 0.45);
+  --gradient-brand: linear-gradient(90deg, #8f6a43, #e2b574);
+  --gradient-header: linear-gradient(180deg, #17120e, #17120e);
+  --gradient-card: none;
+  --shadow-glow: none;
+
+  font-family: 'IBM Plex Sans Arabic', 'Cairo', sans-serif;
+  background: var(--bg-primary);
+}
+body { background: #17120e; }
+.app button, .app input, .app textarea { font-family: inherit; }
+
+/* ---------- header ---------- */
+.app .header { background: var(--bg-glass); border-bottom: 1px solid var(--line); backdrop-filter: blur(10px); }
+.app .brand-logo-img, .app .footer-logo {
+  border-radius: 50%; background: #fff; object-fit: cover;
+  box-shadow: 0 0 0 2px var(--brass), 0 0 0 5px var(--bg-primary), 0 0 0 6px var(--brass-dark);
+}
+.app .logo-text { font-family: 'Lalezar', sans-serif; font-size: 1.7rem; font-weight: 400; letter-spacing: .02em;
+  background: var(--gradient-brand); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.app .logo-subtitle { color: var(--text-secondary); }
+.app .open-chip { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--text-secondary); }
+.app .open-chip::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--momo-red); }
+.app .open-chip.is-open { color: var(--brass-light); }
+.app .open-chip.is-open::before { background: #3fbf6f; }
+
+.app .search-input { background: var(--bg-card); border: 1px solid var(--line); border-radius: 10px; }
+.app .search-input:focus { border-color: var(--brass); outline: none; }
+
+/* category tabs: underlined text, no emoji */
+.app .category-btn { background: none; border: 0; border-bottom: 2px solid transparent; border-radius: 0;
+  color: var(--text-secondary); font-weight: 600; padding: 10px 14px; box-shadow: none; }
+.app .category-btn.active { color: var(--brass-light); border-bottom-color: var(--brass); background: none; }
+.app .cat-icon, .app .section-icon { display: none; }
+
+/* ---------- menu as a printed price list ---------- */
+.app .menu-content { max-width: 960px; margin-inline: auto; }
+.app .section-title { display: flex; align-items: center; gap: 14px; margin: 44px 0 6px; }
+.app .section-title h2 {
+  font-family: 'Lalezar', sans-serif; font-weight: 400; font-size: 1.7rem; line-height: 1.3; color: var(--ink);
+  padding: 2px 30px; background: var(--gradient-brand);
+  /* notched ends echo the ribbon in the logo */
+  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 50%, 100% 100%, 0 100%, 14px 50%);
+}
+.app .item-count { color: var(--text-muted); font-size: .85rem; }
+
+.app .items-grid { display: grid; grid-template-columns: 1fr; gap: 0 48px; }
+@media (min-width: 900px) { .app .items-grid { grid-template-columns: 1fr 1fr; } }
+
+.app .menu-card {
+  background: none; border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
+  box-shadow: none; backdrop-filter: none; padding: 16px 0; animation: none; transform: none;
+}
+.app .menu-card:hover { background: none; transform: none; }
+.app .menu-card--in-cart { box-shadow: inset 3px 0 0 var(--brass); padding-inline-start: 14px; }
+.app .card-top { display: block; }
+.app .item-line { display: flex; align-items: baseline; gap: 10px; }
+.app .item-name { font-size: 1.05rem; font-weight: 600; color: var(--text-primary); }
+.app .item-leader { flex: 1; min-width: 16px; border-bottom: 2px dotted rgba(201, 151, 91, .4); transform: translateY(-4px); }
+.app .item-price-tag { color: var(--brass-light); font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; background: none; border: 0; padding: 0; }
+.app .price-curr { font-size: .75rem; font-weight: 500; color: var(--text-secondary); }
+.app .item-description { margin-top: 4px; color: var(--text-secondary); font-size: .88rem; line-height: 1.7; max-width: 60ch; }
+
+/* sizes: one segmented price ladder */
+.app .sizes-hint { display: none; }
+.app .size-chips-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(68px, 1fr)); gap: 0;
+  margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.app .size-chip { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px;
+  background: none; border: 0; border-radius: 0; border-inline-start: 1px solid var(--line); color: var(--text-secondary); cursor: pointer; }
+.app .size-chip:first-child { border-inline-start: 0; }
+.app .size-chip .chip-price { font-size: .78rem; font-variant-numeric: tabular-nums; }
+.app .size-chip.active { background: var(--brass); color: var(--ink); }
+.app .size-chip.active .chip-price { color: var(--ink); font-weight: 700; }
+
+.app .card-bottom-row { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; }
+.app .active-price-val { color: var(--brass-light); font-weight: 700; }
+
+/* buttons */
+.app .add-to-cart-btn, .app .cart-bar, .app .order-type-btn.active, .app .stepper-inc, .app .qty-btn:not(.decrease) {
+  background: var(--brass); color: var(--ink); border: 0; box-shadow: none; font-weight: 700;
+}
+.app .add-to-cart-btn { border-radius: 8px; padding: 8px 16px; }
+.app .quantity-stepper { border: 1px solid var(--brass); border-radius: 8px; background: none; }
+.app .stepper-qty { color: var(--brass-light); font-variant-numeric: tabular-nums; }
+.app .stepper-dec { background: none; color: var(--brass-light); }
+.app .whatsapp-btn { background: #1f8a4c; color: #fff; border-radius: 10px; }
+.app .cart-modal-content { background: var(--bg-secondary); border-top: 2px solid var(--brass); }
+.app .cart-badge, .app .header-cart-count { background: var(--momo-red); color: #fff; }
+.app .total-price, .app .cart-item-price { color: var(--brass-light); }
+
+/* footer */
+.app .site-footer { background: #120d09; border-top: 1px solid var(--line); }
+.app .footer-section-title, .app .footer-brand-name { font-family: 'Lalezar', sans-serif; font-weight: 400; color: var(--brass-light); }
+.app .footer-delivery-banner a { background: var(--bg-card); border: 1px solid var(--line); }
+
+/* quality floor */
+.app :is(button, a, input, textarea):focus-visible { outline: 2px solid var(--brass-light); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .app *, .app *::before, .app *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+
+/* ---------- address marquee ---------- */
+.app .topbar-address { flex: 1; min-width: 0; }
+.app .marquee { display: block; overflow: hidden; white-space: nowrap; }
+.app .marquee-track { display: inline-flex; width: max-content; gap: 3rem; animation: marquee 16s linear infinite; }
+.app .marquee:hover .marquee-track { animation-play-state: paused; }
+/* RTL: text travels with the reading flow; second copy makes the loop seamless */
+@keyframes marquee { to { transform: translateX(50%); } }
+
+/* ---------- service-charge notice ---------- */
+.app .service-note { margin: 16px 0 0; padding: 10px 14px; border-inline-start: 3px solid var(--brass);
+  background: var(--bg-card); color: var(--text-secondary); font-size: .88rem; line-height: 1.7; }
+.app .service-note--cart { margin: 0 0 12px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .app .marquee { overflow: visible; white-space: normal; }
+  .app .marquee-track > span + span { display: none; }
+}

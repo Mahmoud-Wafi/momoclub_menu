@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import './index.css';
+import './menu-theme.css';
 import menuDataFallback from './data/menuData';
 import ManagerDashboard from './ManagerDashboard';
 
@@ -7,6 +8,7 @@ const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
 const WHATSAPP_NUMBER = '201127603628';
 const DELIVERY_NUMBER = '01127603628';
 const RESTAURANT_ADDRESS = 'مركز أبو المطامير - كوبري خميس - أمام فرع وي';
+const SERVICE_RATE = 0.14; // dine-in only
 const WORKING_HOURS = 'يومياً من 9:00 صباحاً حتى 3:00 صباحاً';
 
 const checkIsManagerRoute = () => {
@@ -22,6 +24,12 @@ const checkIsManagerRoute = () => {
     hash === '#/admin' ||
     params.get('mode') === 'manager'
   );
+};
+
+// Open 9:00 to 03:00 Cairo time
+const isOpenNow = () => {
+  const h = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Cairo' })).getHours();
+  return h >= 9 || h < 3;
 };
 
 function App() {
@@ -164,6 +172,13 @@ function App() {
     return { totalItems, totalPrice };
   }, [cart]);
 
+  // Billing: 14% service applies to dine-in orders only
+  const billing = useMemo(() => {
+    const subtotal = cartTotals.totalPrice;
+    const service = orderType === 'dine-in' ? Math.round(subtotal * SERVICE_RATE * 100) / 100 : 0;
+    return { subtotal, service, total: subtotal + service };
+  }, [cartTotals, orderType]);
+
   // Filter items by search
   const filteredCategories = useMemo(() => {
     if (!searchQuery.trim()) return categories;
@@ -227,7 +242,11 @@ function App() {
     });
 
     message += '\n──────────────────\n';
-    message += `💰 *الإجمالي: ${cartTotals.totalPrice} ج.م*\n`;
+    if (billing.service > 0) {
+      message += `🧾 المجموع: ${billing.subtotal} ج.م\n`;
+      message += `🛎️ خدمة 14%: ${billing.service} ج.م\n`;
+    }
+    message += `💰 *الإجمالي: ${billing.total} ج.م*\n`;
     message += `📦 عدد الأصناف: ${cartTotals.totalItems}\n`;
 
     if (orderNotes) {
@@ -238,7 +257,7 @@ function App() {
     message += '🕐 شكراً لاختيارك MOMO CLUB!';
 
     return encodeURIComponent(message);
-  }, [cart, orderType, tableNumber, customerName, customerAddress, orderNotes, cartTotals]);
+  }, [cart, orderType, tableNumber, customerName, customerAddress, orderNotes, cartTotals, billing]);
 
   // Send order via WhatsApp
   const sendWhatsApp = useCallback(() => {
@@ -300,11 +319,16 @@ function App() {
         <div className={`header-topbar ${headerShrink ? 'hide' : ''}`}>
           <div className="topbar-inner">
             <span className="topbar-item topbar-address" title="العنوان">
-              <span>📍</span> {RESTAURANT_ADDRESS}
+              <span className="marquee">
+                <span className="marquee-track">
+                  <span>{RESTAURANT_ADDRESS}</span>
+                  <span aria-hidden="true">{RESTAURANT_ADDRESS}</span>
+                </span>
+              </span>
             </span>
             <span className="topbar-divider">|</span>
             <span className="topbar-item" title="مواعيد العمل">
-              <span>🕐</span> 9 ص - 3 ص
+              <span className={`open-chip ${isOpenNow() ? 'is-open' : ''}`}>{isOpenNow() ? 'مفتوح الآن حتى 3 ص' : 'مغلق حاليًا، نفتح 9 ص'}</span>
             </span>
             <span className="topbar-divider">|</span>
             <a href={`tel:${DELIVERY_NUMBER}`} className="topbar-item topbar-phone" title="طلب ديليفري">
@@ -366,6 +390,10 @@ function App() {
 
       {/* ====== MENU CONTENT ====== */}
       <main className="menu-content">
+        <p className="service-note">
+          الأسعار لا تشمل الخدمة. تُضاف خدمة 14% على الطلبات داخل المطعم والكافيه فقط، والتوصيل بدون خدمة.
+        </p>
+
         {/* Search results info */}
         {searchQuery && (
           <div className="search-results-info">
@@ -410,18 +438,20 @@ function App() {
                     style={{ animationDelay: `${index * 0.03}s` }}
                   >
                     <div className="card-top">
-                      <div className="item-header-info">
+                      <div className="item-line">
                         <h3 className="item-name">{item.name}</h3>
-                        {item.description && (
-                          <p className="item-description">{item.description}</p>
+                        {!item.has_sizes && (
+                          <>
+                            <span className="item-leader" aria-hidden="true" />
+                            <div className="item-price-tag">
+                              <span className="price-val">{item.price}</span>
+                              <span className="price-curr"> ج.م</span>
+                            </div>
+                          </>
                         )}
                       </div>
-
-                      {!item.has_sizes && (
-                        <div className="item-price-tag">
-                          <span className="price-val">{item.price}</span>
-                          <span className="price-curr"> ج.م</span>
-                        </div>
+                      {item.description && (
+                        <p className="item-description">{item.description}</p>
                       )}
                     </div>
 
@@ -687,9 +717,21 @@ function App() {
                       <span>عدد الأصناف</span>
                       <span>{cartTotals.totalItems}</span>
                     </div>
+                    {billing.service > 0 && (
+                      <>
+                        <div className="summary-row">
+                          <span>المجموع</span>
+                          <span>{billing.subtotal} ج.م</span>
+                        </div>
+                        <div className="summary-row">
+                          <span>خدمة 14%</span>
+                          <span>{billing.service} ج.م</span>
+                        </div>
+                      </>
+                    )}
                     <div className="summary-row total">
                       <span>الإجمالي</span>
-                      <span className="total-price">{cartTotals.totalPrice} ج.م</span>
+                      <span className="total-price">{billing.total} ج.م</span>
                     </div>
                   </div>
                 </>
@@ -719,6 +761,7 @@ function App() {
                   <div className="order-form">
                     {orderType === 'dine-in' ? (
                       <div className="form-group">
+                        <p className="service-note service-note--cart">تُضاف خدمة 14% على الطلب داخل المطعم.</p>
                         <label>🪑 رقم الطاولة</label>
                         <input
                           type="text"
