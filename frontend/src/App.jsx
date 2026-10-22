@@ -67,7 +67,8 @@ function App() {
   const [tableNumber, setTableNumber] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
-  const [orderNotes, setOrderNotes] = useState('');
+  const [noteFor, setNoteFor] = useState(null); // item id whose notes panel is open
+  const [noteText, setNoteText] = useState('');
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedSizes, setSelectedSizes] = useState({});
@@ -128,7 +129,7 @@ function App() {
   }, []);
 
   // Add to cart
-  const addToCart = useCallback((item, category) => {
+  const addToCart = useCallback((item, category, note = '') => {
     const sizeName = item.has_sizes ? (selectedSizes[item.id] || item.sizes[0]?.name) : null;
     const price = getItemPrice(item, sizeName);
     const cartKey = `${item.id}-${sizeName || 'default'}`;
@@ -137,7 +138,9 @@ function App() {
       const existing = prev.find(ci => ci.cartKey === cartKey);
       if (existing) {
         return prev.map(ci =>
-          ci.cartKey === cartKey ? { ...ci, quantity: ci.quantity + 1 } : ci
+          ci.cartKey === cartKey
+            ? { ...ci, quantity: ci.quantity + 1, note: note ? (ci.note ? `${ci.note}، ${note}` : note) : ci.note }
+            : ci
         );
       }
       return [...prev, {
@@ -147,7 +150,8 @@ function App() {
         category: category.name,
         size: sizeName,
         price: Number(price),
-        quantity: 1
+        quantity: 1,
+        note
       }];
     });
 
@@ -289,21 +293,19 @@ function App() {
       const itemTotal = item.price * item.quantity;
       message += `${index + 1}. ${item.name}${sizeText}\n`;
       message += `   ${item.quantity} × ${item.price} = *${itemTotal} ج.م*\n`;
+      if (item.note) message += `   📝 ملاحظات: ${item.note}\n`;
     });
 
     message += '\n──────────────────\n';
     message += `💰 *الإجمالي: ${cartTotals.totalPrice} ج.م*\n`;
     message += `📦 عدد الأصناف: ${cartTotals.totalItems}\n`;
 
-    if (orderNotes) {
-      message += `\n📝 *ملاحظات:* ${orderNotes}\n`;
-    }
 
     message += '\n━━━━━━━━━━━━━━━━━━━━\n';
     message += '🕐 شكراً لاختيارك MOMO CLUB!';
 
     return encodeURIComponent(message);
-  }, [cart, orderType, tableNumber, customerName, customerAddress, orderNotes, cartTotals]);
+  }, [cart, orderType, tableNumber, customerName, customerAddress, cartTotals]);
 
   // Send order via WhatsApp
   const sendWhatsApp = useCallback(() => {
@@ -332,7 +334,8 @@ function App() {
     setTableNumber('');
     setCustomerName('');
     setCustomerAddress('');
-    setOrderNotes('');
+    setNoteFor(null);
+    setNoteText('');
     showToast('✅ تم إرسال الطلب وإفراغ السلة بنجاح!', 'success');
   }, [cart, orderType, tableNumber, customerName, customerAddress, buildWhatsAppMessage, showToast]);
 
@@ -574,7 +577,7 @@ function App() {
                           <button
                             type="button"
                             className="add-to-cart-btn"
-                            onClick={() => addToCart(item, category)}
+                            onClick={() => { setNoteFor(item.id); setNoteText(''); }}
                           >
                             <span className="add-plus">+</span>
                             <span>أضف للطلب</span>
@@ -582,6 +585,30 @@ function App() {
                         )}
                       </div>
                     </div>
+                    {noteFor === item.id && qtyInCart === 0 && (
+                      <div className="note-panel">
+                        <label className="note-label" htmlFor={`note-${item.id}`}>ملاحظات</label>
+                        <textarea
+                          id={`note-${item.id}`}
+                          rows={2}
+                          maxLength={200}
+                          autoFocus
+                          placeholder="مثال: بدون بصل (اختياري)"
+                          value={noteText}
+                          onChange={(e) => setNoteText(e.target.value)}
+                        />
+                        <div className="note-actions">
+                          <button
+                            type="button"
+                            className="note-confirm"
+                            onClick={() => { addToCart(item, category, noteText.trim()); setNoteFor(null); setNoteText(''); }}
+                          >
+                            تأكيد الإضافة
+                          </button>
+                          <button type="button" className="note-cancel" onClick={() => setNoteFor(null)}>إلغاء</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -673,6 +700,9 @@ function App() {
                           <div className="cart-item-name">{item.name}</div>
                           {item.size && (
                             <div className="cart-item-size">الحجم: {item.size}</div>
+                          )}
+                          {item.note && (
+                            <div className="cart-item-note">ملاحظات: {item.note}</div>
                           )}
                           <div className="cart-item-price">
                             {item.price * item.quantity} ج.م
@@ -770,15 +800,6 @@ function App() {
                         </div>
                       </>
                     )}
-                    <div className="form-group">
-                      <label>📝 ملاحظات (اختياري)</label>
-                      <textarea
-                        rows={2}
-                        placeholder="مثال: بدون بصل، حار، ..."
-                        value={orderNotes}
-                        onChange={(e) => setOrderNotes(e.target.value)}
-                      />
-                    </div>
                   </div>
                 </div>
               )}

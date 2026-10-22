@@ -208,3 +208,14 @@ body { background: #17120e; }
 .app .cart-header { position: sticky; top: 0; z-index: 2; background: var(--bg-secondary); padding-top: 14px; }
 .app .cart-modal-content > :not(.cart-header) { position: relative; }
 .app .floating-cart { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* ---------- per-item notes ---------- */
+.app .note-panel { margin-top: 12px; padding: 12px; background: var(--bg-card); border: 1px solid var(--line); border-inline-start: 3px solid var(--brass); display: grid; gap: 8px; }
+.app .note-label { font-weight: 600; color: var(--brass-light); font-size: .9rem; }
+.app .note-panel textarea { width: 100%; resize: vertical; min-height: 56px; padding: 10px 12px; background: var(--bg-primary); color: var(--text-primary);
+  border: 1px solid var(--line); border-radius: 8px; font-size: 1rem; line-height: 1.6; }
+.app .note-panel textarea:focus { border-color: var(--brass); outline: none; }
+.app .note-actions { display: flex; gap: 8px; }
+.app .note-confirm { flex: 1; padding: 10px 14px; border: 0; border-radius: 8px; background: var(--brass); color: var(--ink); font-weight: 700; cursor: pointer; }
+.app .note-cancel { padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; background: none; color: var(--text-secondary); cursor: pointer; }
+.app .cart-item-note { margin-top: 2px; font-size: .82rem; color: var(--text-secondary); line-height: 1.6; }
