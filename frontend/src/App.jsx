@@ -57,6 +57,7 @@ function App() {
   // State
   const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
+  const [catSheetOpen, setCatSheetOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -193,6 +194,33 @@ function App() {
       })
       .filter(cat => cat.items.length > 0);
   }, [categories, searchQuery]);
+
+  // Keep the "current section" label in sync while scrolling
+  useEffect(() => {
+    let raf = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const offset = (document.querySelector('.header')?.offsetHeight || 200) + 24;
+        let current = null;
+        for (const cat of filteredCategories) {
+          const el = sectionRefs.current[cat.id];
+          if (el && el.getBoundingClientRect().top - offset <= 0) current = cat.id;
+        }
+        if (current) setActiveCategory(prev => (prev === current ? prev : current));
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(raf); };
+  }, [filteredCategories]);
+
+  useEffect(() => {
+    if (!catSheetOpen) return;
+    const onKey = (e) => { if (e.key === 'Escape') setCatSheetOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [catSheetOpen]);
 
   // Scroll to category section
   const scrollToCategory = useCallback((categoryId) => {
@@ -372,20 +400,39 @@ function App() {
           </div>
 
           {/* Category Navigation */}
-          <nav className="category-nav" ref={categoryNavRef}>
-            {categories.map(cat => (
-              <button
-                key={cat.id}
-                className={`category-btn ${activeCategory === cat.id ? 'active' : ''}`}
-                onClick={() => scrollToCategory(cat.id)}
-              >
-                <span className="cat-icon">{cat.icon}</span>
-                {cat.name}
-              </button>
-            ))}
-          </nav>
+          <div className="cat-trigger-wrap">
+            <button className="cat-trigger" onClick={() => setCatSheetOpen(true)} aria-haspopup="dialog">
+              <span className="cat-trigger-current">
+                {(categories.find(c => c.id === activeCategory) || categories[0])?.name}
+              </span>
+              <span className="cat-trigger-all">كل الأقسام ({categories.length}) ▾</span>
+            </button>
+          </div>
         </div>
       </header>
+
+      {catSheetOpen && (
+        <div className="cat-sheet-backdrop" onClick={() => setCatSheetOpen(false)}>
+          <div className="cat-sheet" role="dialog" aria-modal="true" aria-label="الأقسام" onClick={e => e.stopPropagation()}>
+            <div className="cat-sheet-head">
+              <span>الأقسام</span>
+              <button className="cat-sheet-close" onClick={() => setCatSheetOpen(false)} aria-label="إغلاق">×</button>
+            </div>
+            <div className="cat-sheet-grid">
+              {categories.map(cat => (
+                <button
+                  key={cat.id}
+                  className={`cat-sheet-item ${activeCategory === cat.id ? 'active' : ''}`}
+                  onClick={() => { scrollToCategory(cat.id); setCatSheetOpen(false); }}
+                >
+                  <span className="cat-sheet-name">{cat.name}</span>
+                  <span className="cat-sheet-count">{cat.items?.length || 0} صنف</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ====== MENU CONTENT ====== */}
       <main className="menu-content">
