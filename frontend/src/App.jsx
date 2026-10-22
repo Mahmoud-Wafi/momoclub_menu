@@ -28,6 +28,8 @@ const checkIsManagerRoute = () => {
 // Arabic-friendly matching: ignore diacritics, unify alef/yaa/taa-marbuta forms
 const normalize = (t = '') => String(t).toLowerCase()
   .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+  .replace(/[\u0660-\u0669]/g, d => d.charCodeAt(0) - 0x0660)
+  .replace(/[\u06F0-\u06F9]/g, d => d.charCodeAt(0) - 0x06F0)
   .replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').trim();
 
 // Open 9:00 to 03:00 Cairo time
@@ -181,6 +183,10 @@ function App() {
   const filteredCategories = useMemo(() => {
     const query = normalize(searchQuery);
     if (!query) return categories;
+    const isNumber = /^\d+(\.\d+)?$/.test(query);
+    const priceTexts = (item) => [item.price, ...(item.sizes || []).map(sz => sz.price)]
+      .filter(p => p !== null && p !== undefined && p !== '')
+      .map(p => String(Number(p)));
     return categories
       .map(cat => {
         // a matching category name shows the whole category
@@ -188,7 +194,10 @@ function App() {
         return {
           ...cat,
           items: cat.items.filter(item =>
-            normalize(item.name).includes(query) || normalize(item.description).includes(query)
+            normalize(item.name).includes(query) ||
+            normalize(item.description).includes(query) ||
+            (item.sizes || []).some(sz => normalize(sz.name).includes(query)) ||
+            (isNumber && priceTexts(item).some(p => p.includes(query)))
           )
         };
       })
@@ -390,7 +399,7 @@ function App() {
             <input
               type="text"
               className="search-input"
-              placeholder="ابحث عن صنف أو قسم..."
+              placeholder="ابحث بالقسم أو الصنف أو السعر..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
