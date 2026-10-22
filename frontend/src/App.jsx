@@ -231,6 +231,16 @@ function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, [catSheetOpen]);
 
+  // Lock page scroll behind the cart / category sheet; Escape closes the cart
+  useEffect(() => {
+    if (!isCartOpen && !catSheetOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e) => { if (e.key === 'Escape') setIsCartOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey); };
+  }, [isCartOpen, catSheetOpen]);
+
   // Scroll to category section
   const scrollToCategory = useCallback((categoryId) => {
     setActiveCategory(categoryId);
