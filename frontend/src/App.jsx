@@ -275,6 +275,11 @@ function App() {
     message += `📍 ${RESTAURANT_ADDRESS}\n`;
     message += `🕐 مواعيد العمل: ${WORKING_HOURS}\n`;
     message += '━━━━━━━━━━━━━━━━━━━━\n\n';
+    const notedCount = cart.filter(ci => ci.note).length;
+    if (notedCount > 0) {
+      message += `⚠️ *يوجد ملاحظات على ${notedCount} ${notedCount === 1 ? 'صنف' : 'أصناف'}، راجعها قبل التحضير*\n\n`;
+    }
+
 
     if (orderType === 'dine-in') {
       message += `📍 *داخل المطعم*\n`;
@@ -293,7 +298,11 @@ function App() {
       const itemTotal = item.price * item.quantity;
       message += `${index + 1}. ${item.name}${sizeText}\n`;
       message += `   ${item.quantity} × ${item.price} = *${itemTotal} ج.م*\n`;
-      if (item.note) message += `   📝 ملاحظات: ${item.note}\n`;
+      if (item.note) {
+        // one line only: collapse line breaks and strip WhatsApp formatting characters
+        const oneLine = item.note.replace(/[\r\n]+/g, ' ').replace(/[*_~`]/g, '').replace(/\s+/g, ' ').trim();
+        message += `   ⚠️ *ملاحظات:* ${oneLine}\n`;
+      }
     });
 
     message += '\n──────────────────\n';
