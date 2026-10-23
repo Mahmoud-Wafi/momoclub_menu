@@ -5,7 +5,6 @@ from decimal import Decimal
 
 from django.contrib.auth import authenticate
 from django.db import transaction
-from django.db.models import Count, Sum
 from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.authtoken.models import Token
@@ -17,8 +16,7 @@ from rest_framework.throttling import AnonRateThrottle
 from .models import MenuItem, Order, OrderItem
 
 CASHIER_GROUP = 'cashier'
-ACTIVE = ['new', 'preparing', 'ready']
-NEXT = {'new': ['preparing', 'cancelled'], 'preparing': ['ready', 'cancelled'], 'ready': ['delivered', 'cancelled']}
+RETENTION = timedelta(hours=1)  # orders are deleted this long after the cashier presses OK
 _DIGITS = str.maketrans('٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹', '01234567890123456789')
 
 
@@ -35,6 +33,11 @@ class IsCashier(BasePermission):
     def has_permission(self, request, view):
         u = request.user
         return bool(u and u.is_authenticated and (u.is_superuser or u.groups.filter(name=CASHIER_GROUP).exists()))
+
+
+def purge_expired_orders():
+    """يحذف الطلبات التي مرّت ساعة على موافقة الكاشير عليها (لا حاجة لمهمة مجدولة)."""
+    Order.objects.filter(acknowledged_at__lt=timezone.now() - RETENTION).delete()
 
 
 # ---------- إنشاء الطلب (عام) ----------
@@ -109,6 +112,7 @@ class OrderCreateSerializer(serializers.Serializer):
 @permission_classes([AllowAny])
 @throttle_classes([OrderRateThrottle])
 def create_order(request):
+    purge_expired_orders()
     ser = OrderCreateSerializer(data=request.data)
     ser.is_valid(raise_exception=True)
     order = ser.save()
@@ -124,11 +128,15 @@ class OrderItemOut(serializers.ModelSerializer):
 
 class OrderOut(serializers.ModelSerializer):
     items = OrderItemOut(many=True, read_only=True)
+    expires_at = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
-        fields = ['id', 'order_type', 'status', 'source', 'table_number', 'customer_name',
-                  'customer_phone', 'customer_address', 'total', 'created_at', 'items']
+        fields = ['id', 'order_type', 'source', 'table_number', 'customer_name', 'customer_phone',
+                  'customer_address', 'total', 'created_at', 'acknowledged_at', 'expires_at', 'items']
+
+    def get_expires_at(self, obj):
+        return obj.acknowledged_at + RETENTION if obj.acknowledged_at else None
 
 
 @api_view(['POST'])
@@ -152,33 +160,23 @@ def cashier_logout(request):
 @api_view(['GET'])
 @permission_classes([IsCashier])
 def cashier_orders(request):
-    scope = request.query_params.get('scope', 'active')
-    now = timezone.now()
-    qs = Order.objects.prefetch_related('items')
-    if scope == 'done':
-        qs = qs.filter(status__in=['delivered', 'cancelled'], updated_at__gte=now - timedelta(hours=24)).order_by('-updated_at')
-    else:
-        qs = qs.filter(status__in=ACTIVE).order_by('created_at')
-    day_start = timezone.localtime(now).replace(hour=0, minute=0, second=0, microsecond=0)
-    counts = {r['status']: r['n'] for r in Order.objects.filter(status__in=ACTIVE).values('status').annotate(n=Count('id'))}
-    today = Order.objects.filter(created_at__gte=day_start).exclude(status='cancelled').aggregate(n=Count('id'), s=Sum('total'))
-    return Response({
-        'orders': OrderOut(qs, many=True).data,
-        'summary': {'new': counts.get('new', 0), 'preparing': counts.get('preparing', 0), 'ready': counts.get('ready', 0),
-                    'today_orders': today['n'] or 0, 'today_total': str(today['s'] or 0)},
-    })
+    """كل الطلبات الحالية: الجديدة (لم يوافق عليها الكاشير) أولًا ثم الباقي."""
+    purge_expired_orders()
+    orders = list(Order.objects.prefetch_related('items').order_by('created_at'))
+    orders.sort(key=lambda x: (x.acknowledged_at is not None, x.created_at))
+    return Response({'orders': OrderOut(orders, many=True).data,
+                     'retention_minutes': int(RETENTION.total_seconds() // 60)})
 
 
-@api_view(['PATCH'])
+@api_view(['POST'])
 @permission_classes([IsCashier])
-def cashier_order_update(request, pk):
+def cashier_order_ack(request, pk):
+    """موافقة الكاشير: ينتقل الطلب من «جديد» إلى القائمة العادية، وتبدأ مهلة الحذف."""
     try:
         order = Order.objects.prefetch_related('items').get(pk=pk)
     except Order.DoesNotExist:
         return Response({'message': 'الطلب غير موجود'}, status=status.HTTP_404_NOT_FOUND)
-    new_status = request.data.get('status')
-    if new_status not in NEXT.get(order.status, []):
-        return Response({'message': 'لا يمكن تغيير حالة الطلب إلى هذه الحالة'}, status=status.HTTP_400_BAD_REQUEST)
-    order.status = new_status
-    order.save(update_fields=['status', 'updated_at'])
+    if order.acknowledged_at is None:
+        order.acknowledged_at = timezone.now()
+        order.save(update_fields=['acknowledged_at', 'updated_at'])
     return Response(OrderOut(order).data)

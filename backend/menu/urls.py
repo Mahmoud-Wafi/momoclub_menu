@@ -13,7 +13,7 @@ urlpatterns = [
     path('cashier/auth/login/', orders.cashier_login, name='cashier-login'),
     path('cashier/auth/logout/', orders.cashier_logout, name='cashier-logout'),
     path('cashier/orders/', orders.cashier_orders, name='cashier-orders'),
-    path('cashier/orders/<int:pk>/', orders.cashier_order_update, name='cashier-order-update'),
+    path('cashier/orders/<int:pk>/ack/', orders.cashier_order_ack, name='cashier-order-ack'),
     path('auth/logout/', views.manager_logout, name='manager-logout'),
     path('auth/login/', views.manager_login, name='manager-login'),
 ]

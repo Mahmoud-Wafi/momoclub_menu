@@ -69,14 +69,10 @@ class SizeOption(models.Model):
 class Order(models.Model):
     """طلب من العميل (داخل المطعم أو ديليفري)"""
     TYPE_CHOICES = [('dine-in', 'داخل المطعم'), ('delivery', 'ديليفري')]
-    STATUS_CHOICES = [
-        ('new', 'جديد'), ('preparing', 'قيد التحضير'), ('ready', 'جاهز'),
-        ('delivered', 'تم التسليم'), ('cancelled', 'ملغي'),
-    ]
     SOURCE_CHOICES = [('app', 'المنيو'), ('whatsapp', 'واتساب')]
 
     order_type = models.CharField(max_length=20, choices=TYPE_CHOICES, verbose_name="نوع الطلب")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new', db_index=True, verbose_name="الحالة")
+    acknowledged_at = models.DateTimeField(null=True, blank=True, db_index=True, verbose_name="وقت موافقة الكاشير")
     source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='app', verbose_name="المصدر")
     table_number = models.CharField(max_length=20, blank=True, default="", verbose_name="رقم الطاولة")
     customer_name = models.CharField(max_length=100, blank=True, default="", verbose_name="اسم العميل")
