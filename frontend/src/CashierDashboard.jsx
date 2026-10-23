@@ -13,6 +13,44 @@ const clock = (d) => new Date(d).toLocaleTimeString('ar-EG', { hour: '2-digit', 
 const ageMin = (d, now) => Math.max(0, Math.floor((now - new Date(d).getTime()) / 60000));
 const ageText = (m) => (m < 1 ? 'الآن' : m < 60 ? `منذ ${m} د` : `منذ ${Math.floor(m / 60)} س ${m % 60} د`);
 
+/* ---------------- search ---------------- */
+// Arabic-friendly: ignore diacritics, Arabic-Indic digits, alef/yaa/taa-marbuta variants
+const norm = (t = '') => String(t).toLowerCase()
+  .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+  .replace(/[\u0660-\u0669]/g, (d) => d.charCodeAt(0) - 0x0660)
+  .replace(/[\u06F0-\u06F9]/g, (d) => d.charCodeAt(0) - 0x06F0)
+  .replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
+  .replace(/\s+/g, ' ').trim();
+
+// A plain number is a table (exact, so 4 never matches 14) or the tail of a phone number;
+// "#12" is an order number; text searches name, address, items and notes
+function orderMatches(o, q) {
+  if (/^#\d+$/.test(q)) return String(o.id) === q.slice(1);
+  if (/^\d+$/.test(q)) return o.table_number === q || (q.length >= 4 && o.customer_phone.includes(q));
+  const table = q.match(/^(?:طاوله|ترابيزه|table)\s*(\d+)$/);
+  if (table) return o.table_number === table[1];
+  if (['ديليفري', 'دليفري', 'توصيل', 'delivery'].includes(q)) return o.order_type === 'delivery';
+  return [o.customer_name, o.customer_address, ...o.items.flatMap((i) => [i.name, i.size, i.note])]
+    .some((v) => norm(v).includes(q));
+}
+
+const splitOrders = (list) => {
+  const seen = list.filter((o) => o.acknowledged_at);
+  const dineOrders = seen.filter((o) => o.order_type === 'dine-in');
+  const map = new Map();
+  dineOrders.forEach((o) => {
+    const key = o.table_number || '—';
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(o);
+  });
+  return {
+    fresh: list.filter((o) => !o.acknowledged_at),
+    dine: dineOrders,
+    delivery: seen.filter((o) => o.order_type === 'delivery'),
+    tables: [...map.entries()],
+  };
+};
+
 /* ---------------- login ---------------- */
 function Login({ onLogin }) {
   const [username, setUsername] = useState('');
@@ -123,6 +161,7 @@ export default function CashierDashboard() {
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
   const [section, setSection] = useState('dine-in'); // phone: which list is shown
   const [orders, setOrders] = useState([]);
+  const [query, setQuery] = useState('');
   const [retention, setRetention] = useState(60); // minutes before an acknowledged order is deleted
   const [online, setOnline] = useState(true);
   const [loaded, setLoaded] = useState(false);
@@ -212,26 +251,29 @@ export default function CashierDashboard() {
     return () => { clearInterval(poll); clearInterval(tick); };
   }, [token, load]);
 
-  const { fresh, dine, delivery, tables } = useMemo(() => {
-    const seen = orders.filter((o) => o.acknowledged_at);
-    const dineOrders = seen.filter((o) => o.order_type === 'dine-in');
-    const map = new Map();
-    dineOrders.forEach((o) => {
-      const key = o.table_number || '—';
-      if (!map.has(key)) map.set(key, []);
-      map.get(key).push(o);
-    });
-    return {
-      fresh: orders.filter((o) => !o.acknowledged_at),
-      dine: dineOrders,
-      delivery: seen.filter((o) => o.order_type === 'delivery'),
-      tables: [...map.entries()],
-    };
-  }, [orders]);
+  const totals = useMemo(() => splitOrders(orders), [orders]);
+  const q = norm(query);
+  const matched = useMemo(() => (q ? orders.filter((o) => orderMatches(o, q)) : orders), [orders, q]);
+  const view = useMemo(() => splitOrders(matched), [matched]);
+  const { fresh, dine, delivery, tables } = view;
+
+  // tables with an order right now, for one-tap filtering
+  const activeTables = useMemo(
+    () => [...new Set(orders.filter((o) => o.order_type === 'dine-in').map((o) => o.table_number))]
+      .sort((a, b) => Number(a) - Number(b) || String(a).localeCompare(String(b))),
+    [orders],
+  );
+
+  // while searching, show the section that actually has results
+  useEffect(() => {
+    if (!q) return;
+    if (section === 'dine-in' && dine.length === 0 && delivery.length > 0) setSection('delivery');
+    else if (section === 'delivery' && delivery.length === 0 && dine.length > 0) setSection('dine-in');
+  }, [q, dine.length, delivery.length, section]);
 
   useEffect(() => {
-    document.title = fresh.length > 0 ? `(${fresh.length}) طلبات جديدة | الكاشير` : 'الكاشير | MOMO CLUB';
-  }, [fresh.length]);
+    document.title = totals.fresh.length > 0 ? `(${totals.fresh.length}) طلبات جديدة | الكاشير` : 'الكاشير | MOMO CLUB';
+  }, [totals.fresh.length]);
 
   useEffect(() => {
     const meta = document.createElement('meta');
@@ -286,10 +328,49 @@ export default function CashierDashboard() {
         <div className="c-loading">جاري تحميل الطلبات…</div>
       ) : (
         <>
+          <section className="c-search" aria-label="بحث في الطلبات">
+            <div className="c-search-box">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="2" /><path d="M20 20l-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+              <input
+                type="search"
+                inputMode="search"
+                enterKeyHint="search"
+                aria-label="بحث في الطلبات"
+                placeholder="ابحث برقم الطاولة أو اسم العميل أو #رقم الطلب…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Escape') setQuery(''); }}
+              />
+              {query && <button type="button" className="c-search-clear" onClick={() => setQuery('')} aria-label="مسح البحث">×</button>}
+            </div>
+            {activeTables.length > 0 && (
+              <div className="c-table-chips" role="group" aria-label="الطاولات الحالية">
+                <span>الطاولات:</span>
+                {activeTables.map((t) => (
+                  <button
+                    type="button"
+                    key={t}
+                    className={q === String(t) ? 'on' : ''}
+                    aria-pressed={q === String(t)}
+                    onClick={() => setQuery(q === String(t) ? '' : String(t))}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            )}
+            {q && (
+              <div className="c-search-result" role="status">
+                {matched.length > 0 ? `${matched.length} ${matched.length === 1 ? 'نتيجة' : 'نتائج'} لـ «${query.trim()}»` : `لا توجد نتائج لـ «${query.trim()}»`}
+                <button type="button" onClick={() => setQuery('')}>مسح البحث</button>
+              </div>
+            )}
+          </section>
+
           <section className="c-stats" aria-label="ملخص الطلبات">
-            <div className="stat s-new"><strong>{fresh.length}</strong><span>جديد</span></div>
-            <div className="stat"><strong>{dine.length}</strong><span>داخل المطعم</span></div>
-            <div className="stat"><strong>{delivery.length}</strong><span>ديليفري</span></div>
+            <div className="stat s-new"><strong>{totals.fresh.length}</strong><span>جديد</span></div>
+            <div className="stat"><strong>{totals.dine.length}</strong><span>داخل المطعم</span></div>
+            <div className="stat"><strong>{totals.delivery.length}</strong><span>ديليفري</span></div>
           </section>
 
           {fresh.length > 0 && (

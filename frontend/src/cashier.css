@@ -143,3 +143,19 @@
 .c-footnote { margin: 24px 20px 0; color: var(--text-3); font-size: .85rem; text-align: center; }
 .c-board { margin-top: 20px; }
 @media (max-width: 560px) { .c-new { margin-inline: 12px; padding: 12px; } .c-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } .stat { padding: 10px 12px; } .stat:nth-child(3) { border-inline-start: 1px solid var(--line); } .stat:nth-child(n+3) { border-top: 0; } }
+
+/* ---------- search ---------- */
+.c-search { margin: 16px 20px 0; display: grid; gap: 10px; }
+.c-search-box { display: flex; align-items: center; gap: 10px; min-height: 54px; padding: 0 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; color: var(--text-2); }
+.c-search-box:focus-within { border-color: var(--brass); box-shadow: 0 0 0 3px rgba(201,151,91,.2); }
+.c-search-box input { flex: 1; min-width: 0; height: 52px; background: none; border: 0; outline: none; color: var(--text); font-size: 1.05rem; }
+.c-search-box input::placeholder { color: var(--text-3); }
+.c-search-box input::-webkit-search-cancel-button { display: none; }
+.c-search-clear { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: none; color: var(--text); font-size: 1.3rem; line-height: 1; cursor: pointer; }
+.c-table-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--text-2); font-size: .9rem; }
+.c-table-chips button { min-width: 44px; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font-size: 1rem; font-weight: 700; cursor: pointer; font-variant-numeric: tabular-nums; }
+.c-table-chips button.on { background: var(--brass); border-color: var(--brass); color: var(--ink); }
+.c-search-result { display: flex; align-items: center; gap: 12px; color: var(--brass-light); font-weight: 600; }
+.c-search-result button { margin-inline-start: auto; background: none; border: 0; color: var(--text-2); text-decoration: underline; cursor: pointer; font-size: .95rem; }
+@media (max-width: 560px) { .c-search { margin-inline: 12px; } }
+.cashier-app .c-search-box input:focus-visible { outline: none; }
