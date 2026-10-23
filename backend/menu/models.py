@@ -64,3 +64,46 @@ class SizeOption(models.Model):
 
     def __str__(self):
         return f"{self.item.name} - {self.name}: {self.price}"
+
+
+class Order(models.Model):
+    """طلب من العميل (داخل المطعم أو ديليفري)"""
+    TYPE_CHOICES = [('dine-in', 'داخل المطعم'), ('delivery', 'ديليفري')]
+    STATUS_CHOICES = [
+        ('new', 'جديد'), ('preparing', 'قيد التحضير'), ('ready', 'جاهز'),
+        ('delivered', 'تم التسليم'), ('cancelled', 'ملغي'),
+    ]
+    SOURCE_CHOICES = [('app', 'المنيو'), ('whatsapp', 'واتساب')]
+
+    order_type = models.CharField(max_length=20, choices=TYPE_CHOICES, verbose_name="نوع الطلب")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new', db_index=True, verbose_name="الحالة")
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='app', verbose_name="المصدر")
+    table_number = models.CharField(max_length=20, blank=True, default="", verbose_name="رقم الطاولة")
+    customer_name = models.CharField(max_length=100, blank=True, default="", verbose_name="اسم العميل")
+    customer_phone = models.CharField(max_length=20, blank=True, default="", verbose_name="رقم الهاتف")
+    customer_address = models.CharField(max_length=300, blank=True, default="", verbose_name="العنوان")
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="الإجمالي")
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "طلب"
+        verbose_name_plural = "الطلبات"
+
+    def __str__(self):
+        return f"#{self.id} - {self.get_order_type_display()}"
+
+
+class OrderItem(models.Model):
+    """صنف داخل الطلب (الاسم والسعر محفوظان وقت الطلب)"""
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
+    menu_item = models.ForeignKey(MenuItem, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    name = models.CharField(max_length=200)
+    size = models.CharField(max_length=50, blank=True, default="")
+    price = models.DecimalField(max_digits=8, decimal_places=2)
+    quantity = models.PositiveIntegerField(default=1)
+    note = models.CharField(max_length=200, blank=True, default="")
+
+    def __str__(self):
+        return f"{self.quantity} x {self.name}"

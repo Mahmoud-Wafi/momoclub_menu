@@ -124,7 +124,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "ar"
 
-TIME_ZONE = "Africa/Cairo"
+TIME_ZONE = 'Africa/Cairo'
 
 USE_I18N = True
 
@@ -173,5 +173,5 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
-    'DEFAULT_THROTTLE_RATES': {'login': '10/min'},
+    'DEFAULT_THROTTLE_RATES': {'login': '10/min', 'order': '20/min'},
 }

@@ -29,3 +29,18 @@ class SizeOptionAdmin(admin.ModelAdmin):
     list_display = ['item', 'name', 'price', 'order']
     list_filter = ['item__category']
     ordering = ['item__category__order', 'item__order', 'order']
+
+
+from .models import Order, OrderItem  # noqa: E402
+
+
+class OrderItemInline(admin.TabularInline):
+    model = OrderItem
+    extra = 0
+
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ('id', 'order_type', 'status', 'source', 'table_number', 'customer_name', 'total', 'created_at')
+    list_filter = ('order_type', 'status', 'source')
+    inlines = [OrderItemInline]

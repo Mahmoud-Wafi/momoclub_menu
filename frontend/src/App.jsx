@@ -3,12 +3,18 @@ import './index.css';
 import './menu-theme.css';
 import menuDataFallback from './data/menuData';
 import ManagerDashboard from './ManagerDashboard';
+import CashierDashboard from './CashierDashboard';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
 const WHATSAPP_NUMBER = '201094740404';
 const DELIVERY_NUMBER = '01094740404';
 const RESTAURANT_ADDRESS = 'مركز أبو المطامير - كوبري خميس - أمام فرع وي';
 const WORKING_HOURS = 'يومياً من 9:00 صباحاً حتى 3:00 صباحاً';
+
+const checkIsCashierRoute = () => {
+  const path = window.location.pathname.toLowerCase();
+  return path === '/cashier' || path.startsWith('/cashier/');
+};
 
 const checkIsManagerRoute = () => {
   const path = window.location.pathname.toLowerCase();
@@ -25,6 +31,8 @@ const checkIsManagerRoute = () => {
   );
 };
 
+const getViewMode = () => (checkIsCashierRoute() ? 'cashier' : checkIsManagerRoute() ? 'manager' : 'menu');
+
 // Arabic-friendly matching: ignore diacritics, unify alef/yaa/taa-marbuta forms
 const normalize = (t = '') => String(t).toLowerCase()
   .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
@@ -39,11 +47,11 @@ const isOpenNow = () => {
 };
 
 function App() {
-  const [viewMode, setViewMode] = useState(() => (checkIsManagerRoute() ? 'manager' : 'menu'));
+  const [viewMode, setViewMode] = useState(getViewMode);
 
   useEffect(() => {
     const handlePopState = () => {
-      setViewMode(checkIsManagerRoute() ? 'manager' : 'menu');
+      setViewMode(getViewMode());
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -67,6 +75,9 @@ function App() {
   const [tableNumber, setTableNumber] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [sending, setSending] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(null); // { id } after a direct send
   const [noteFor, setNoteFor] = useState(null); // item id whose notes panel is open
   const [noteText, setNoteText] = useState('');
   const [toast, setToast] = useState(null);
@@ -74,7 +85,6 @@ function App() {
   const [selectedSizes, setSelectedSizes] = useState({});
   const [headerShrink, setHeaderShrink] = useState(false);
 
-  const categoryNavRef = useRef(null);
   const sectionRefs = useRef({});
 
   // Shrink header on scroll
@@ -287,6 +297,7 @@ function App() {
     } else {
       message += `🚚 *توصيل للمنزل*\n`;
       message += `👤 الاسم: *${customerName || 'غير محدد'}*\n`;
+      message += `📞 الهاتف: *${customerPhone || 'غير محدد'}*\n`;
       message += `📍 العنوان: *${customerAddress || 'غير محدد'}*\n\n`;
     }
 
@@ -314,39 +325,82 @@ function App() {
     message += '🕐 شكراً لاختيارك MOMO CLUB!';
 
     return encodeURIComponent(message);
-  }, [cart, orderType, tableNumber, customerName, customerAddress, cartTotals]);
+  }, [cart, orderType, tableNumber, customerName, customerAddress, customerPhone, cartTotals]);
 
-  // Send order via WhatsApp
-  const sendWhatsApp = useCallback(() => {
-    if (cart.length === 0) {
-      showToast('❌ السلة فارغة!', 'error');
-      return;
+  // Validate the cart form; true when the order can be sent
+  const validateOrder = useCallback(() => {
+    if (cart.length === 0) { showToast('السلة فارغة!', 'error'); return false; }
+    if (orderType === 'dine-in' && !tableNumber.trim()) { showToast('من فضلك أدخل رقم الطاولة', 'error'); return false; }
+    if (orderType === 'delivery') {
+      if (!customerName.trim() || !customerAddress.trim()) { showToast('من فضلك أدخل الاسم والعنوان', 'error'); return false; }
+      const phone = customerPhone.replace(/[\u0660-\u0669]/g, d => d.charCodeAt(0) - 0x0660).replace(/[\s\-+]/g, '');
+      if (!/^(01[0125]\d{8}|201[0125]\d{8})$/.test(phone)) { showToast('رقم الهاتف غير صحيح (مثال: 01012345678)', 'error'); return false; }
     }
+    return true;
+  }, [cart, orderType, tableNumber, customerName, customerAddress, customerPhone, showToast]);
 
-    if (orderType === 'dine-in' && !tableNumber.trim()) {
-      showToast('❌ من فضلك أدخل رقم الطاولة', 'error');
-      return;
-    }
+  // Save the order in the restaurant system (the cashier screen reads it from there)
+  const submitOrder = useCallback((source) => fetch(`${API_BASE}/orders/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    keepalive: true,
+    body: JSON.stringify({
+      order_type: orderType,
+      source,
+      table_number: tableNumber,
+      customer_name: customerName,
+      customer_phone: customerPhone,
+      customer_address: customerAddress,
+      items: cart.map(ci => ({ id: ci.id, size: ci.size || '', quantity: ci.quantity, note: ci.note || '' })),
+    }),
+  }), [cart, orderType, tableNumber, customerName, customerPhone, customerAddress]);
 
-    if (orderType === 'delivery' && (!customerName.trim() || !customerAddress.trim())) {
-      showToast('❌ من فضلك أدخل الاسم والعنوان', 'error');
-      return;
-    }
-
-    const message = buildWhatsAppMessage();
-    const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
-    window.open(url, '_blank');
-
-    // Empty cart and reset order inputs
+  const resetOrderForm = useCallback(() => {
     setCart([]);
     setIsCartOpen(false);
     setTableNumber('');
     setCustomerName('');
     setCustomerAddress('');
+    setCustomerPhone('');
     setNoteFor(null);
     setNoteText('');
-    showToast('✅ تم إرسال الطلب وإفراغ السلة بنجاح!', 'success');
-  }, [cart, orderType, tableNumber, customerName, customerAddress, buildWhatsAppMessage, showToast]);
+  }, []);
+
+  // Send via WhatsApp (the order is also saved for the cashier screen)
+  const sendWhatsApp = useCallback(() => {
+    if (!validateOrder()) return;
+    const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${buildWhatsAppMessage()}`;
+    submitOrder('whatsapp').catch(() => {}); // never block WhatsApp if the system is unreachable
+    window.open(url, '_blank');
+    resetOrderForm();
+    showToast('✅ تم تجهيز طلبك، أكمل الإرسال من واتساب!', 'success');
+  }, [validateOrder, submitOrder, buildWhatsAppMessage, resetOrderForm, showToast]);
+
+  // Send straight to the restaurant system
+  const sendToRestaurant = useCallback(async () => {
+    if (sending || !validateOrder()) return;
+    setSending(true);
+    try {
+      const res = await submitOrder('app');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const first = data && typeof data === 'object' ? Object.values(data).flat()[0] : null;
+        showToast(`❌ ${typeof first === 'string' ? first : 'تعذر إرسال الطلب، حاول مرة أخرى'}`, 'error');
+        return;
+      }
+      resetOrderForm();
+      setOrderSuccess({ id: data.id });
+    } catch {
+      showToast('❌ تعذر الاتصال، تحقق من الإنترنت أو أرسل عبر واتساب', 'error');
+    } finally {
+      setSending(false);
+    }
+  }, [sending, validateOrder, submitOrder, resetOrderForm, showToast]);
+
+  // Cashier mode: separate login, token and API from the manager
+  if (viewMode === 'cashier') {
+    return <CashierDashboard />;
+  }
 
   // Manager mode
   if (viewMode === 'manager') {
@@ -441,6 +495,18 @@ function App() {
           </div>
         </div>
       </header>
+
+      {orderSuccess && (
+        <div className="cat-sheet-backdrop" onClick={() => setOrderSuccess(null)}>
+          <div className="cat-sheet success-sheet" role="dialog" aria-modal="true" aria-label="تم إرسال الطلب" onClick={e => e.stopPropagation()}>
+            <div className="success-mark" aria-hidden="true">✓</div>
+            <h3>تم إرسال طلبك للمطعم</h3>
+            <div className="success-no">رقم الطلب <strong dir="ltr">#{orderSuccess.id}</strong></div>
+            <p>سنبدأ تحضيره الآن. احتفظ برقم الطلب لو احتجت أي استفسار.</p>
+            <button className="note-confirm" onClick={() => setOrderSuccess(null)}>تمام</button>
+          </div>
+        </div>
+      )}
 
       {catSheetOpen && (
         <div className="cat-sheet-backdrop" onClick={() => setCatSheetOpen(false)}>
@@ -799,6 +865,17 @@ function App() {
                           />
                         </div>
                         <div className="form-group">
+                          <label>رقم الهاتف</label>
+                          <input
+                            type="tel"
+                            inputMode="tel"
+                            dir="ltr"
+                            placeholder="01XXXXXXXXX"
+                            value={customerPhone}
+                            onChange={(e) => setCustomerPhone(e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group">
                           <label>📍 العنوان</label>
                           <input
                             type="text"
@@ -813,12 +890,16 @@ function App() {
                 </div>
               )}
 
-              {/* WhatsApp Send Button */}
+              {/* Send buttons */}
               {cart.length > 0 && (
-                <button className="whatsapp-btn" onClick={sendWhatsApp}>
-                  <span className="wa-icon">💬</span>
-                  إرسال الطلب عبر واتساب
-                </button>
+                <div className="send-buttons">
+                  <button className="send-direct-btn" onClick={sendToRestaurant} disabled={sending}>
+                    {sending ? 'جاري الإرسال…' : 'إرسال الطلب للمطعم'}
+                  </button>
+                  <button className="whatsapp-btn" onClick={sendWhatsApp}>
+                    إرسال عبر واتساب
+                  </button>
+                </div>
               )}
             </div>
           </div>
