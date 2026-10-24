@@ -6,8 +6,8 @@ import ManagerDashboard from './ManagerDashboard';
 import CashierDashboard from './CashierDashboard';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
-const WHATSAPP_NUMBER = '201094740404';
-const DELIVERY_NUMBER = '01094740404';
+const WHATSAPP_NUMBER = '201094740407';
+const DELIVERY_NUMBER = '01094740407';
 const RESTAURANT_ADDRESS = 'مركز أبو المطامير - كوبري خميس - أمام فرع وي';
 const WORKING_HOURS = 'يومياً من 9:00 صباحاً حتى 3:00 صباحاً';
 
