@@ -1,0 +1,73 @@
+/* Motion for the customer site.
+   One entrance on load, prices "printed" as you scroll, a ticket that prints in the footer,
+   and quick feedback on taps. Scroll reveals only run under .motion-on, which App.jsx leaves
+   off for people who prefer reduced motion (menu-theme.css also stops all animation for them).
+   Import AFTER menu-theme.css. */
+
+.app { --ease-out: cubic-bezier(.2, .7, .2, 1); }
+
+/* ---------- 1. load: the header slides in (index.css), then its parts settle in order ---------- */
+@keyframes riseIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes logoSettle { from { opacity: 0; transform: scale(.6) rotate(-24deg); } to { opacity: 1; transform: none; } }
+/* the old glow was green; this one stays in the logo's brass */
+@keyframes logoGlow {
+  0%, 100% { box-shadow: 0 0 0 2px var(--brass), 0 0 0 5px var(--bg-primary), 0 0 0 6px var(--brass-dark), 0 0 0 rgba(201, 151, 91, 0); }
+  50%      { box-shadow: 0 0 0 2px var(--brass), 0 0 0 5px var(--bg-primary), 0 0 0 6px var(--brass-dark), 0 0 22px rgba(201, 151, 91, .35); }
+}
+.app .brand-logo-img { animation: logoSettle .8s .1s var(--ease-out) backwards, logoGlow 5s 1s infinite ease-in-out; }
+.app .header-cart-btn  { animation: riseIn .5s .25s var(--ease-out) backwards; }
+.app .search-container { animation: riseIn .5s .35s var(--ease-out) backwards; }
+.app .cat-trigger-wrap { animation: riseIn .5s .45s var(--ease-out) backwards; }
+
+/* "open now" dot breathes */
+@keyframes openPulse { 0% { box-shadow: 0 0 0 0 rgba(63, 191, 111, .55); } 70%, 100% { box-shadow: 0 0 0 7px rgba(63, 191, 111, 0); } }
+.app .open-chip.is-open::before { animation: openPulse 2.4s ease-out infinite; }
+
+/* ---------- 2. scroll: section ribbons unroll, dotted leaders draw toward each price ---------- */
+@keyframes ribbonUnroll {
+  from { clip-path: polygon(100% 0, 100% 0, 100% 50%, 100% 100%, 100% 100%, 100% 50%); }
+  to   { clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 50%, 100% 100%, 0 100%, 14px 50%); }
+}
+.app.motion-on .section-title:not([data-in]) h2 { clip-path: polygon(100% 0, 100% 0, 100% 50%, 100% 100%, 100% 100%, 100% 50%); }
+.app.motion-on .section-title[data-in] h2 { animation: ribbonUnroll .7s var(--ease-out) backwards; }
+.app.motion-on .section-title .item-count { transition: opacity .4s .4s; }
+.app.motion-on .section-title:not([data-in]) .item-count { opacity: 0; }
+
+/* --i (0-5) staggers cards that enter the screen together */
+.app.motion-on .menu-card .item-leader { transform-origin: right; transition: scale .5s calc(var(--i, 0) * 45ms + .1s) var(--ease-out); }
+.app.motion-on .menu-card:not([data-in]) .item-leader { scale: 0 1; }
+.app.motion-on .menu-card .item-price-tag { transition: opacity .35s calc(var(--i, 0) * 45ms + .45s); }
+.app.motion-on .menu-card:not([data-in]) .item-price-tag { opacity: 0; }
+.app.motion-on .menu-card .size-chip { transition: opacity .3s calc(var(--i, 0) * 45ms + .2s), background-color .2s, color .2s; }
+.app.motion-on .menu-card:not([data-in]) .size-chip { opacity: 0; }
+
+@media (hover: hover) {
+  .app .item-name { transition: color .2s; }
+  .app .menu-card:hover .item-name { color: var(--brass-light); }
+}
+
+/* ---------- 3. footer: the ticket prints out, then the credits appear; stars glint while in view ---------- */
+@keyframes ticketPrint {
+  from { clip-path: inset(0 0 100% 0); transform: translateY(-14px); }
+  to   { clip-path: inset(0 0 0 0); transform: none; }
+}
+@keyframes starGlint { to { background-position: 100% 0; } }
+.app.motion-on .momo-footer:not([data-in]) .foot-ticket { clip-path: inset(0 0 100% 0); }
+.app.motion-on .momo-footer[data-in] .foot-ticket { animation: ticketPrint 1s var(--ease-out) backwards; }
+.app.motion-on .momo-footer .foot-bottom { transition: opacity .6s .8s; }
+.app.motion-on .momo-footer:not([data-in]) .foot-bottom { opacity: 0; }
+.app .momo-footer[data-in] .foot-stars { animation: starGlint 9s linear infinite; }
+
+/* ---------- 4. feedback: answer taps and changes ---------- */
+@keyframes qtyTick { from { opacity: .2; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.app .stepper-qty { display: inline-block; animation: qtyTick .25s var(--ease-out); }
+
+.app :is(.add-to-cart-btn, .note-confirm, .ticket-wa, .cart-bar, .stepper-btn, .cat-sheet-item, .size-chip, .category-btn) {
+  transition: background-color .2s, color .2s, border-color .2s, box-shadow .2s, transform .2s, scale .15s var(--ease-out);
+}
+.app :is(.add-to-cart-btn, .note-confirm, .ticket-wa, .cart-bar, .stepper-btn, .cat-sheet-item, .size-chip):active { scale: .96; }
+
+.app .search-input { transition: border-color .2s, box-shadow .2s; }
+.app .search-input:focus { box-shadow: 0 0 0 3px rgba(201, 151, 91, .18); }
+
+.app .cat-sheet-backdrop { animation: fadeIn .2s ease-out; }

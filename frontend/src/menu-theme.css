@@ -141,32 +141,53 @@ body { background: #17120e; }
   .app .marquee-track > span + span { display: none; }
 }
 
-/* ---------- footer ---------- */
+/* ---------- footer: the delivery number printed on a kitchen ticket ---------- */
 .momo-footer { margin-top: 64px; padding: 0 16px 28px; background: #120d09; border-top: 1px solid var(--line); color: var(--text-secondary);
   font-family: 'IBM Plex Sans Arabic', 'Cairo', sans-serif; --brass: #c9975b; --brass-light: #f0c98a; --ink: #1b130c; --line: rgba(201,151,91,.22); }
 /* ring of stars from the logo, as one thin band */
 .momo-footer .foot-stars { overflow: hidden; white-space: nowrap; text-align: center; letter-spacing: .9em; font-size: .7rem; padding: 14px 0 0;
-  background: linear-gradient(90deg, #8f6a43, #f0c98a); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  background: linear-gradient(90deg, #8f6a43 0%, #f0c98a 25%, #8f6a43 50%, #f0c98a 75%, #8f6a43 100%); background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent; }
 .momo-footer .foot-inner { max-width: 960px; margin: 0 auto; padding-top: 28px; display: grid; gap: 28px; }
 
-/* the one bold element: the delivery ribbon */
-.momo-footer .foot-order { display: flex; flex-direction: column; align-items: center; gap: 2px; text-decoration: none; text-align: center;
-  padding: 18px 56px; color: var(--ink); background: linear-gradient(90deg, #8f6a43, #e2b574 60%, #f0c98a);
-  clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 50%, 100% 100%, 0 100%, 22px 50%); }
-.momo-footer .foot-order-label { font-weight: 600; }
-.momo-footer .foot-order-num { font-family: 'Lalezar', sans-serif; font-size: 2.2rem; line-height: 1.2; letter-spacing: .04em; }
-.momo-footer .foot-order:focus-visible { outline: 2px solid var(--brass-light); outline-offset: 4px; }
+/* the one bold element: a brass ticket with torn top and bottom edges */
+.momo-footer .foot-ticket { --pad: clamp(22px, 5vw, 44px); position: relative; color: var(--ink); padding: 34px var(--pad) 38px;
+  background: linear-gradient(135deg, #b88547 0%, #e2b574 55%, #f0c98a 100%);
+  -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 18px 100%,
+                conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) 50% / 18px 100%;
+  -webkit-mask-composite: source-in;
+  mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 18px 100%,
+        conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) 50% / 18px 100%;
+  mask-composite: intersect; }
+.momo-footer .ticket-order { display: grid; justify-items: center; gap: 2px; text-align: center; }
+.momo-footer .ticket-label { margin: 0; font-weight: 600; font-size: 1.05rem; }
+.momo-footer .ticket-num { font-family: 'Lalezar', sans-serif; font-size: clamp(2.2rem, 9vw, 3.1rem); line-height: 1.15; letter-spacing: .05em;
+  color: var(--ink); text-decoration: none; border-radius: 4px; }
+.momo-footer .ticket-num:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; }
+.momo-footer .ticket-num:focus-visible, .momo-footer .ticket-wa:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
 
-.momo-footer .foot-info { display: grid; margin: 0; }
-.momo-footer .foot-info > div { display: grid; grid-template-columns: 7.5rem 1fr; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
-.momo-footer dt { color: var(--brass-light); font-weight: 600; }
-.momo-footer dd { margin: 0; line-height: 1.8; max-width: 60ch; }
-@media (max-width: 560px) { .momo-footer .foot-info > div { grid-template-columns: 1fr; gap: 2px; } .momo-footer .foot-order { padding-inline: 40px; } }
+/* perforation with a bite out of each side */
+.momo-footer .ticket-tear { position: relative; margin: 22px calc(var(--pad) * -1); border-top: 2px dashed rgba(27, 19, 12, .4); }
+.momo-footer .ticket-tear::before, .momo-footer .ticket-tear::after { content: ''; position: absolute; top: -11px; width: 20px; height: 20px; border-radius: 50%; background: #120d09; }
+.momo-footer .ticket-tear::before { left: -10px; }
+.momo-footer .ticket-tear::after { right: -10px; }
 
-.momo-footer .foot-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-.momo-footer .foot-link { padding: 10px 20px; border: 1px solid var(--brass); border-radius: 8px; color: var(--brass-light); text-decoration: none; font-weight: 600; }
-.momo-footer .foot-link:hover { background: var(--brass); color: var(--ink); }
-.momo-footer .foot-link:focus-visible { outline: 2px solid var(--brass-light); outline-offset: 2px; }
+/* rows read like the menu: label, dotted leader, value */
+.momo-footer .ticket-rows { margin: 0; display: grid; gap: 12px; }
+.momo-footer .ticket-rows > div { display: flex; align-items: baseline; gap: 10px; }
+.momo-footer .ticket-rows dt { flex: none; font-weight: 700; }
+.momo-footer .ticket-rows > div::before { content: ''; order: 1; flex: 1; min-width: 16px; border-bottom: 2px dotted rgba(27, 19, 12, .5); transform: translateY(-4px); }
+.momo-footer .ticket-rows dd { order: 2; margin: 0; text-wrap: pretty; flex: 0 1 auto; max-width: 62%; line-height: 1.7; color: #2a1c0f; }
+
+.momo-footer .ticket-wa { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; margin-top: 24px; padding: 0 22px;
+  border-radius: 8px; background: var(--ink); color: var(--brass-light); font-weight: 700; text-decoration: none; }
+.momo-footer .ticket-wa:hover { background: #2d2013; }
+@media (max-width: 560px) {
+  .momo-footer .ticket-rows > div { display: block; }
+  .momo-footer .ticket-rows > div::before { display: none; }
+  .momo-footer .ticket-rows dd { max-width: none; margin-top: 2px; }
+  .momo-footer .ticket-wa { width: 100%; }
+}
 
 .momo-footer .foot-bottom { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; padding-top: 8px; }
 .momo-footer .foot-brand { display: flex; align-items: center; gap: 14px; }

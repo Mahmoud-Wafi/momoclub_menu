@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo, lazy, Suspense } from 'react';
 import './index.css';
 import './menu-theme.css';
+import './motion.css';
 import menuDataFallback from './data/menuData';
 
 // Dashboards are only for staff: keep them out of the customer's first download
@@ -88,6 +89,10 @@ function App() {
   const [activeCategory, setActiveCategory] = useState(initialMenu?.[0]?.id ?? null);
   const [stale, setStale] = useState(Boolean(initialMenu)); // showing saved menu while refreshing
   const hasMenuRef = useRef(Boolean(initialMenu));
+  const [motionOn] = useState(() => typeof window !== 'undefined'
+    && 'IntersectionObserver' in window
+    && !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const revealRef = useRef(null);
   const [catSheetOpen, setCatSheetOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState([]);
@@ -153,6 +158,23 @@ function App() {
   useEffect(() => {
     fetchMenu();
   }, [fetchMenu]);
+
+  // Scroll reveals: mark each [data-reveal] element with data-in the first time it comes into view.
+  // (A data attribute, not a class, so React re-renders never wipe it.)
+  useEffect(() => {
+    if (!motionOn) return;
+    if (!revealRef.current) {
+      revealRef.current = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.setAttribute('data-in', '');
+          revealRef.current.unobserve(entry.target);
+        });
+      }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+    }
+    document.querySelectorAll('[data-reveal]:not([data-in])').forEach((el) => revealRef.current.observe(el));
+  });
+  useEffect(() => () => revealRef.current?.disconnect(), []);
 
   // Show toast notification
   const showToast = useCallback((message, type = 'success') => {
@@ -466,7 +488,7 @@ function App() {
   }
 
   return (
-    <div className="app">
+    <div className={`app${motionOn ? ' motion-on' : ''}`}>
       <a className="skip-link" href="#menu-main">تخطَّ إلى المنيو</a>
       {/* ====== HERO HEADER ====== */}
       <header className={`header ${headerShrink ? 'header--shrink' : ''}`}>
@@ -507,7 +529,7 @@ function App() {
             <button className="header-cart-btn" aria-label="سلة المشتريات" onClick={() => setIsCartOpen(true)}>
               <span className="header-cart-icon">🛒</span>
               {cartTotals.totalItems > 0 && (
-                <span className="header-cart-count">{cartTotals.totalItems}</span>
+                <span className="header-cart-count" key={cartTotals.totalItems}>{cartTotals.totalItems}</span>
               )}
             </button>
           </div>
@@ -590,7 +612,7 @@ function App() {
             key={category.id}
             ref={el => sectionRefs.current[category.id] = el}
           >
-            <div className="section-title">
+            <div className="section-title" data-reveal>
               <span className="section-icon">{category.icon}</span>
               <h2>{category.name}</h2>
               <span className="item-count">{category.items.length} صنف</span>
@@ -608,7 +630,8 @@ function App() {
                   <div
                     key={item.id}
                     className={`menu-card ${isInCart ? 'menu-card--in-cart' : ''}`}
-                    style={{ animationDelay: `${index * 0.03}s` }}
+                    data-reveal
+                    style={{ '--i': index % 6 }}
                   >
                     <div className="card-top">
                       <div className="item-line">
@@ -671,7 +694,7 @@ function App() {
                             >
                               −
                             </button>
-                            <span className="stepper-qty">{qtyInCart}</span>
+                            <span className="stepper-qty" key={qtyInCart}>{qtyInCart}</span>
                             <button
                               type="button"
                               className="stepper-btn stepper-inc"
@@ -726,24 +749,22 @@ function App() {
       </main>
 
       {/* ====== FOOTER ====== */}
-      <footer className="momo-footer">
+      <footer className="momo-footer" data-reveal>
         <div className="foot-stars" aria-hidden="true">{'★'.repeat(21)}</div>
         <div className="foot-inner">
-          <a className="foot-order" href={`tel:${DELIVERY_NUMBER}`}>
-            <span className="foot-order-label">اطلب ديليفري يوصلك سخن لحد البيت</span>
-            <span className="foot-order-num" dir="ltr">{DELIVERY_NUMBER}</span>
-          </a>
-
-          <dl className="foot-info">
-            <div><dt>العنوان</dt><dd>{RESTAURANT_ADDRESS}</dd></div>
-            <div><dt>مواعيد العمل</dt><dd>{WORKING_HOURS}</dd></div>
-            <div><dt>مطبخنا</dt><dd>مشويات على الفحم، طواجن، بيتزا، كريب، باستا، برجر، مشروبات وشيشة.</dd></div>
-          </dl>
-
-          <div className="foot-actions">
-            <a className="foot-link" href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noopener noreferrer">راسلنا على واتساب</a>
-            <a className="foot-link" href={`tel:${DELIVERY_NUMBER}`}>اتصل بنا</a>
-          </div>
+          <section className="foot-ticket" aria-label="طلب ديليفري ومعلومات المطعم">
+            <div className="ticket-order">
+              <p className="ticket-label">اطلب ديليفري يوصلك سخن لحد البيت</p>
+              <a className="ticket-num" href={`tel:${DELIVERY_NUMBER}`} dir="ltr" aria-label={`اتصل على ${DELIVERY_NUMBER}`}>{DELIVERY_NUMBER}</a>
+            </div>
+            <div className="ticket-tear" aria-hidden="true" />
+            <dl className="ticket-rows">
+              <div><dt>العنوان</dt><dd>{RESTAURANT_ADDRESS}</dd></div>
+              <div><dt>مواعيد العمل</dt><dd>{WORKING_HOURS}</dd></div>
+              <div><dt>مطبخنا</dt><dd>مشويات على الفحم، طواجن، بيتزا، كريب، باستا، برجر، مشروبات وشيشة.</dd></div>
+            </dl>
+            <a className="ticket-wa" href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noopener noreferrer">راسلنا على واتساب</a>
+          </section>
 
           <div className="foot-bottom">
             <div className="foot-brand">
@@ -765,7 +786,7 @@ function App() {
             <div className="cart-info">
               <div className="cart-icon-badge">
                 🛒
-                <span className="cart-badge">{cartTotals.totalItems}</span>
+                <span className="cart-badge" key={cartTotals.totalItems}>{cartTotals.totalItems}</span>
               </div>
               <span className="cart-text">عرض السلة</span>
             </div>
