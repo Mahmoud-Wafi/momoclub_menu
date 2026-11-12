@@ -80,7 +80,7 @@ function Login({ onLogin }) {
   };
 
   return (
-    <div className="cashier-app cashier-login" dir="rtl">
+    <main className="cashier-app cashier-login" dir="rtl">
       <form className="cashier-login-card" onSubmit={submit}>
         <img src="/logo.jpg" alt="" className="cashier-logo" />
         <h1>شاشة الكاشير</h1>
@@ -92,7 +92,7 @@ function Login({ onLogin }) {
         <input id="c-pass" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         <button className="cashier-btn cashier-btn-primary" disabled={loading}>{loading ? 'جاري الدخول…' : 'دخول'}</button>
       </form>
-    </div>
+    </main>
   );
 }
 

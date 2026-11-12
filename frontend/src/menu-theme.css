@@ -241,3 +241,67 @@ body { background: #17120e; }
 
 /* toast at the top so it never covers the send buttons */
 .app .toast { top: calc(env(safe-area-inset-top, 0px) + 14px); bottom: auto; }
+
+/* =====================================================================
+   Polish pass: brand consistency, contrast (WCAG AA), 44px tap targets
+   ===================================================================== */
+
+/* skip link: first tab stop, visible only on focus */
+.app .skip-link { position: absolute; inset-inline-start: 12px; top: -64px; z-index: 5000; padding: 12px 18px; border-radius: 10px;
+  background: var(--brass); color: var(--ink); font-weight: 700; text-decoration: none; }
+.app .skip-link:focus { top: 12px; }
+
+/* top bar: dark with a brass hairline instead of the old green gradient */
+.app .header-topbar { background: #100b07; border-bottom: 1px solid var(--line); color: var(--text-secondary); }
+.app .header-topbar .topbar-item, .app .header-topbar a { color: var(--text-secondary); }
+.app .topbar-phone { color: var(--brass-light); font-weight: 700; letter-spacing: .03em;
+  /* 44px tap area without changing the bar height */
+  padding: 15px 8px; margin: -15px -8px; }
+.app .topbar-divider { opacity: .6; }
+
+/* header: wordmark readable, cart button in brand colour */
+.app .logo-text { margin: 0; background: linear-gradient(90deg, #d8a867, #f6d9a4); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.app .header-cart-btn { min-width: 44px; height: 44px; background: none; border: 1px solid var(--brass); color: var(--brass-light); }
+.app .header-cart-btn:hover { background: rgba(201, 151, 91, .14); }
+.app .search-input { min-height: 48px; }
+.app .search-input::placeholder, .app .search-icon { color: var(--text-secondary); }
+.app .cat-trigger { min-height: 48px; }
+
+/* item rows: no decorative overlay, tighter rhythm */
+.app .menu-card::before, .app .menu-card::after { display: none; }
+.app .card-top { gap: 0; }
+.app .card-sizes-block { padding-top: 0; margin-top: 8px; gap: 0; }
+.app .size-chips-grid { margin-top: 0; }
+.app .card-bottom-row { border-top: 0; padding-top: 0; margin-top: 10px; }
+.app .item-name { line-height: 1.5; }
+
+/* contrast: muted text raised to AA, white-on-brass fixed */
+.app .item-count, .app .active-price-label, .app .cat-sheet-count, .app .sizes-hint { color: var(--text-secondary); }
+.app .size-chip .chip-name { color: inherit; font-weight: 600; }
+.app .size-chip.active .chip-name { color: var(--ink); }
+.app .add-to-cart-btn .add-plus, .app .add-to-cart-btn { color: var(--ink); }
+.app .price-curr { color: var(--text-secondary); }
+
+/* tap targets: 44px minimum */
+.app .add-to-cart-btn { min-height: 44px; padding-inline: 18px; }
+.app .stepper-btn { min-width: 44px; min-height: 44px; font-size: 1.2rem; }
+.app .quantity-stepper { min-height: 46px; }
+.app .close-cart-btn, .app .cat-sheet-close, .app .remove-item-btn { min-width: 44px; min-height: 44px; }
+.app .order-form input, .app .order-form select, .app .note-panel textarea { min-height: 48px; }
+.app .note-confirm, .app .note-cancel { min-height: 44px; }
+.app .foot-link { min-height: 44px; display: inline-flex; align-items: center; }
+
+/* footer designer credit with phone */
+.momo-footer .foot-credit { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; color: var(--text-secondary); }
+.momo-footer .foot-credit strong { color: var(--text-primary); }
+.momo-footer .foot-designer-phone { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px;
+  color: var(--brass-light); font-weight: 600; letter-spacing: .04em; text-decoration: none; font-variant-numeric: tabular-nums; }
+.momo-footer .foot-designer-phone:hover { background: var(--brass); color: var(--ink); }
+.momo-footer .foot-copy { color: var(--text-secondary); }
+
+/* last contrast fixes */
+.app .skip-link { padding: 14px 18px; }
+.app .cart-item-size { color: var(--text-secondary); }
+.app .whatsapp-btn, .app .send-buttons .whatsapp-btn { background: #19773f; color: #fff; }
+.app .floating-cart, .app .cart-bar { color: var(--ink); }
+.app .floating-cart *:not(.cart-badge), .app .cart-bar *:not(.cart-badge) { color: inherit; }

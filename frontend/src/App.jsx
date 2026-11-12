@@ -33,6 +33,8 @@ const checkIsManagerRoute = () => {
 
 const getViewMode = () => (checkIsCashierRoute() ? 'cashier' : checkIsManagerRoute() ? 'manager' : 'menu');
 
+const fmt = (n) => { const v = Number(n); return Number.isFinite(v) ? (Number.isInteger(v) ? String(v) : v.toFixed(2)) : n; };
+
 // Arabic-friendly matching: ignore diacritics, unify alef/yaa/taa-marbuta forms
 const normalize = (t = '') => String(t).toLowerCase()
   .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
@@ -107,7 +109,7 @@ function App() {
       } else {
         throw new Error('API Error');
       }
-    } catch (error) {
+    } catch {
       console.log('Using fallback menu data');
       setCategories(menuDataFallback);
       if (menuDataFallback.length > 0) setActiveCategory(prev => prev || menuDataFallback[0].id);
@@ -245,6 +247,13 @@ function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, [catSheetOpen]);
 
+  // Keyboard and screen-reader users: focus moves into the cart when it opens and back when it closes
+  useEffect(() => {
+    if (!isCartOpen) return undefined;
+    const t = setTimeout(() => document.querySelector('.close-cart-btn')?.focus(), 50);
+    return () => { clearTimeout(t); document.querySelector('.header-cart-btn')?.focus(); };
+  }, [isCartOpen]);
+
   // Lock page scroll behind the cart / category sheet; Escape closes the cart
   useEffect(() => {
     if (!isCartOpen && !catSheetOpen) return;
@@ -317,7 +326,7 @@ function App() {
     });
 
     message += '\n──────────────────\n';
-    message += `💰 *الإجمالي: ${cartTotals.totalPrice} ج.م*\n`;
+    message += `💰 *الإجمالي: ${fmt(cartTotals.totalPrice)} ج.م*\n`;
     message += `📦 عدد الأصناف: ${cartTotals.totalItems}\n`;
 
 
@@ -425,6 +434,7 @@ function App() {
 
   return (
     <div className="app">
+      <a className="skip-link" href="#menu-main">تخطَّ إلى المنيو</a>
       {/* ====== HERO HEADER ====== */}
       <header className={`header ${headerShrink ? 'header--shrink' : ''}`}>
         {/* Top Bar - Restaurant Info */}
@@ -455,13 +465,13 @@ function App() {
             <div className="logo-container">
               <img src="/logo.jpg" alt="MOMO CLUB" className="brand-logo-img" />
               <div>
-                <div className="logo-text">MOMO CLUB</div>
+                <h1 className="logo-text">MOMO CLUB</h1>
                 <div className="logo-subtitle">Cafe & Restaurant</div>
               </div>
             </div>
 
             {/* Cart Button in header */}
-            <button className="header-cart-btn" onClick={() => setIsCartOpen(true)}>
+            <button className="header-cart-btn" aria-label="سلة المشتريات" onClick={() => setIsCartOpen(true)}>
               <span className="header-cart-icon">🛒</span>
               {cartTotals.totalItems > 0 && (
                 <span className="header-cart-count">{cartTotals.totalItems}</span>
@@ -485,14 +495,14 @@ function App() {
           </div>
 
           {/* Category Navigation */}
-          <div className="cat-trigger-wrap">
+          <nav className="cat-trigger-wrap" aria-label="الأقسام">
             <button className="cat-trigger" onClick={() => setCatSheetOpen(true)} aria-haspopup="dialog">
               <span className="cat-trigger-current">
                 {(categories.find(c => c.id === activeCategory) || categories[0])?.name}
               </span>
               <span className="cat-trigger-all">كل الأقسام ({categories.length}) ▾</span>
             </button>
-          </div>
+          </nav>
         </div>
       </header>
 
@@ -532,7 +542,7 @@ function App() {
       )}
 
       {/* ====== MENU CONTENT ====== */}
-      <main className="menu-content">
+      <main className="menu-content" id="menu-main" tabIndex={-1}>
 
         {/* Search results info */}
         {searchQuery && (
@@ -584,7 +594,7 @@ function App() {
                           <>
                             <span className="item-leader" aria-hidden="true" />
                             <div className="item-price-tag">
-                              <span className="price-val">{item.price}</span>
+                              <span className="price-val">{fmt(item.price)}</span>
                               <span className="price-curr"> ج.م</span>
                             </div>
                           </>
@@ -610,7 +620,7 @@ function App() {
                                 onClick={() => handleSizeSelect(item.id, size.name)}
                               >
                                 <span className="chip-name">{size.name}</span>
-                                <span className="chip-price">{size.price} ج.م</span>
+                                <span className="chip-price">{fmt(size.price)} ج.م</span>
                               </button>
                             );
                           })}
@@ -623,7 +633,7 @@ function App() {
                       {item.has_sizes ? (
                         <div className="size-active-price">
                           <span className="active-price-label">السعر:</span>
-                          <span className="active-price-val">{currentPrice} <span className="price-curr">ج.م</span></span>
+                          <span className="active-price-val">{fmt(currentPrice)} <span className="price-curr">ج.م</span></span>
                         </div>
                       ) : <div className="card-bottom-spacer" />}
 
@@ -720,7 +730,7 @@ function App() {
                 <div className="foot-copy">© {new Date().getFullYear()} جميع الحقوق محفوظة</div>
               </div>
             </div>
-            <div className="foot-credit" dir="ltr">Designed & Developed by <strong>Eng. Mahmoud Wafi</strong></div>
+            <div className="foot-credit" dir="ltr">Designed & Developed by <strong>Eng. Mahmoud Wafi</strong> <a className="foot-designer-phone" href="tel:01127603628" dir="ltr">01127603628</a></div>
           </div>
         </div>
       </footer>
@@ -748,7 +758,7 @@ function App() {
       {isCartOpen && (
         <>
           <div className="cart-overlay" onClick={() => setIsCartOpen(false)} />
-          <div className="cart-modal">
+          <div className="cart-modal" role="dialog" aria-modal="true" aria-label="سلة المشتريات">
             <div className="cart-modal-content">
               <div className="cart-handle">
                 <div className="cart-handle-bar"></div>
@@ -756,7 +766,7 @@ function App() {
 
               <div className="cart-header">
                 <h2>🛒 سلة المشتريات</h2>
-                <button className="close-cart-btn" onClick={() => setIsCartOpen(false)}>
+                <button className="close-cart-btn" aria-label="إغلاق السلة" onClick={() => setIsCartOpen(false)}>
                   ✕
                 </button>
               </div>
@@ -780,26 +790,26 @@ function App() {
                             <div className="cart-item-note">ملاحظات: {item.note}</div>
                           )}
                           <div className="cart-item-price">
-                            {item.price * item.quantity} ج.م
+                            {fmt(item.price * item.quantity)} ج.م
                           </div>
                         </div>
                         <div className="cart-item-qty">
                           <button
-                            className="qty-btn decrease"
+                            className="qty-btn decrease" aria-label="تقليل الكمية"
                             onClick={() => updateQuantity(item.cartKey, -1)}
                           >
                             −
                           </button>
                           <span className="qty-value">{item.quantity}</span>
                           <button
-                            className="qty-btn"
+                            className="qty-btn" aria-label="زيادة الكمية"
                             onClick={() => updateQuantity(item.cartKey, 1)}
                           >
                             +
                           </button>
                         </div>
                         <button
-                          className="remove-item-btn"
+                          className="remove-item-btn" aria-label="حذف من السلة"
                           onClick={() => removeFromCart(item.cartKey)}
                         >
                           🗑️
@@ -815,7 +825,7 @@ function App() {
                     </div>
                     <div className="summary-row total">
                       <span>الإجمالي</span>
-                      <span className="total-price">{cartTotals.totalPrice} ج.م</span>
+                      <span className="total-price">{fmt(cartTotals.totalPrice)} ج.م</span>
                     </div>
                   </div>
                 </>
@@ -908,7 +918,7 @@ function App() {
 
       {/* ====== TOAST ====== */}
       {toast && (
-        <div className={`toast ${toast.type === 'error' ? 'error' : ''}`}>
+        <div className={`toast ${toast.type === 'error' ? 'error' : ''}`} role={toast.type === 'error' ? 'alert' : 'status'}>
           {toast.message}
         </div>
       )}

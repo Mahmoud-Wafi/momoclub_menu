@@ -59,3 +59,7 @@
 
 :is(.manager-dashboard, .manager-login-screen) :is(button, a, input, select, textarea):focus-visible { outline: 2px solid var(--brass-light); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .manager-dashboard *, .manager-login-screen * { animation: none !important; transition: none !important; } }
+
+/* a11y polish: 44px tap targets */
+.manager-login-screen input { min-height: 48px; }
+.back-to-menu-btn, .view-menu-btn { min-height: 44px; display: inline-flex; align-items: center; }

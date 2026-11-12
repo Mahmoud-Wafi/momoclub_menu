@@ -159,3 +159,10 @@
 .c-search-result button { margin-inline-start: auto; background: none; border: 0; color: var(--text-2); text-decoration: underline; cursor: pointer; font-size: .95rem; }
 @media (max-width: 560px) { .c-search { margin-inline: 12px; } }
 .cashier-app .c-search-box input:focus-visible { outline: none; }
+
+/* a11y polish: contrast and 44px tap targets */
+.auto-delete, .c-footnote, .c-empty, .stat span, .c-brand-sub { color: var(--text-2); }
+.c-table-chips button { min-height: 44px; }
+.who-phone { min-height: 44px; display: inline-flex; align-items: center; }
+.c-search-clear { min-width: 44px; min-height: 44px; }
+.cashier-login-card input, .cashier-btn { min-height: 48px; }
