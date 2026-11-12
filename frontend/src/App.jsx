@@ -1,9 +1,26 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, lazy, Suspense } from 'react';
 import './index.css';
 import './menu-theme.css';
 import menuDataFallback from './data/menuData';
-import ManagerDashboard from './ManagerDashboard';
-import CashierDashboard from './CashierDashboard';
+
+// Dashboards are only for staff: keep them out of the customer's first download
+const ManagerDashboard = lazy(() => import('./ManagerDashboard'));
+const CashierDashboard = lazy(() => import('./CashierDashboard'));
+
+// Last menu the customer saw, so the page can paint instantly on the next visit
+const MENU_CACHE_KEY = 'momo_menu_v1';
+const readMenuCache = () => {
+  try {
+    const data = JSON.parse(localStorage.getItem(MENU_CACHE_KEY));
+    return Array.isArray(data) && data.length > 0 ? data : null;
+  } catch {
+    return null;
+  }
+};
+const writeMenuCache = (data) => {
+  try { localStorage.setItem(MENU_CACHE_KEY, JSON.stringify(data)); } catch { /* storage full or blocked */ }
+};
+const initialMenu = readMenuCache();
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
 const WHATSAPP_NUMBER = '201094740407';
@@ -67,8 +84,10 @@ function App() {
   }, []);
 
   // State
-  const [categories, setCategories] = useState([]);
-  const [activeCategory, setActiveCategory] = useState(null);
+  const [categories, setCategories] = useState(initialMenu || []);
+  const [activeCategory, setActiveCategory] = useState(initialMenu?.[0]?.id ?? null);
+  const [stale, setStale] = useState(Boolean(initialMenu)); // showing saved menu while refreshing
+  const hasMenuRef = useRef(Boolean(initialMenu));
   const [catSheetOpen, setCatSheetOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState([]);
@@ -81,7 +100,7 @@ function App() {
   const [noteFor, setNoteFor] = useState(null); // item id whose notes panel is open
   const [noteText, setNoteText] = useState('');
   const [toast, setToast] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialMenu);
   const [selectedSizes, setSelectedSizes] = useState({});
   const [headerShrink, setHeaderShrink] = useState(false);
 
@@ -97,21 +116,36 @@ function App() {
   }, []);
 
   // Fetch menu data
+  // The saved/fallback menu is shown right away; the live menu replaces it when it arrives.
   const fetchMenu = useCallback(async () => {
+    // Free servers can take 30-60s to wake up. If there is nothing on screen after
+    // 6s, show the built-in menu meanwhile (the live one still replaces it).
+    const slowTimer = setTimeout(() => {
+      if (hasMenuRef.current) return;
+      hasMenuRef.current = true;
+      setCategories(menuDataFallback);
+      setActiveCategory(prev => prev || menuDataFallback[0]?.id || null);
+      setStale(true);
+      setLoading(false);
+    }, 6000);
     try {
       const response = await fetch(`${API_BASE}/menu/`);
-      if (response.ok) {
-        const data = await response.json();
-        setCategories(data);
-        if (data.length > 0) setActiveCategory(prev => prev || data[0].id);
-      } else {
-        throw new Error('API Error');
-      }
+      if (!response.ok) throw new Error('API Error');
+      const data = await response.json();
+      if (!Array.isArray(data)) throw new Error('Bad menu data');
+      hasMenuRef.current = true;
+      setCategories(data);
+      setActiveCategory(prev => (data.some(c => c.id === prev) ? prev : data[0]?.id ?? null));
+      writeMenuCache(data);
     } catch {
-      console.log('Using fallback menu data');
-      setCategories(menuDataFallback);
-      if (menuDataFallback.length > 0) setActiveCategory(prev => prev || menuDataFallback[0].id);
+      if (!hasMenuRef.current) {
+        hasMenuRef.current = true;
+        setCategories(menuDataFallback);
+        setActiveCategory(prev => prev || menuDataFallback[0]?.id || null);
+      }
     } finally {
+      clearTimeout(slowTimer);
+      setStale(false);
       setLoading(false);
     }
   }, []);
@@ -385,26 +419,48 @@ function App() {
 
   // Cashier mode: separate login, token and API from the manager
   if (viewMode === 'cashier') {
-    return <CashierDashboard />;
+    return (
+      <Suspense fallback={<div className="app menu-skeleton" aria-busy="true" />}>
+        <CashierDashboard />
+      </Suspense>
+    );
   }
 
   // Manager mode
   if (viewMode === 'manager') {
     return (
-      <ManagerDashboard
-        onExitToMenu={handleExitToMenu}
-        onMenuUpdated={fetchMenu}
-      />
+      <Suspense fallback={<div className="app menu-skeleton" aria-busy="true" />}>
+        <ManagerDashboard
+          onExitToMenu={handleExitToMenu}
+          onMenuUpdated={fetchMenu}
+        />
+      </Suspense>
     );
   }
 
-  // Loading
+  // Loading: skeleton of the real layout instead of a full-screen spinner
   if (loading) {
     return (
-      <div className="loading-container">
-        <img src="/logo.jpg" alt="MOMO CLUB" className="loading-logo" />
-        <div className="loading-spinner"></div>
-        <p className="loading-text">جاري تحميل المنيو...</p>
+      <div className="app menu-skeleton" aria-busy="true">
+        <div className="skeleton-head">
+          <img src="/logo.webp" alt="" width="44" height="44" />
+          <div>
+            <div className="skeleton-brand">MOMO CLUB</div>
+            <p role="status">جاري تحميل المنيو</p>
+          </div>
+        </div>
+        <div className="skeleton-chips" aria-hidden="true">
+          <span className="sk" /><span className="sk" /><span className="sk" /><span className="sk" />
+        </div>
+        <div className="skeleton-list" aria-hidden="true">
+          {[0, 1, 2].map(i => (
+            <div className="skeleton-card" key={i}>
+              <span className="sk sk-title" />
+              <span className="sk sk-row" />
+              <span className="sk sk-btn" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -440,7 +496,7 @@ function App() {
           {/* Brand Row */}
           <div className="header-brand-row">
             <div className="logo-container">
-              <img src="/logo.jpg" alt="MOMO CLUB" className="brand-logo-img" />
+              <img src="/logo.webp" alt="MOMO CLUB" className="brand-logo-img" />
               <div>
                 <h1 className="logo-text">MOMO CLUB</h1>
                 <div className="logo-subtitle">Cafe & Restaurant</div>
@@ -505,6 +561,8 @@ function App() {
           </div>
         </div>
       )}
+
+      {stale && <div className="menu-refresh-note" role="status">جاري تحديث الأسعار…</div>}
 
       {/* ====== MENU CONTENT ====== */}
       <main className="menu-content" id="menu-main" tabIndex={-1}>
@@ -689,7 +747,7 @@ function App() {
 
           <div className="foot-bottom">
             <div className="foot-brand">
-              <img src="/logo.jpg" alt="" className="foot-logo" />
+              <img src="/logo.webp" alt="" className="foot-logo" />
               <div>
                 <div className="foot-name">MOMO CLUB</div>
                 <div className="foot-copy">© {new Date().getFullYear()} جميع الحقوق محفوظة</div>

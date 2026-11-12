@@ -1,7 +1,6 @@
 /* MOMO CLUB customer theme: bronze brand from the logo, printed-menu layout.
    Scoped to .app so the Manager dashboard keeps its own styling.
    Import AFTER index.css. */
-@import url('https://fonts.googleapis.com/css2?family=Lalezar&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
 
 .app {
   /* palette sampled from the logo */
@@ -305,3 +304,23 @@ body { background: #17120e; }
 .app .whatsapp-btn, .app .send-buttons .whatsapp-btn { background: #19773f; color: #fff; }
 .app .floating-cart, .app .cart-bar { color: var(--ink); }
 .app .floating-cart *:not(.cart-badge), .app .cart-bar *:not(.cart-badge) { color: inherit; }
+
+/* Loading skeleton: the real layout in outline instead of a full-screen spinner */
+.menu-skeleton { min-height: 100vh; padding: 20px 20px 0; box-sizing: border-box; }
+.menu-skeleton .skeleton-head { display: flex; align-items: center; gap: 12px; padding-bottom: 8px; }
+.menu-skeleton .skeleton-head img { width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--brass); object-fit: cover; }
+.menu-skeleton .skeleton-brand { font-family: 'Lalezar', sans-serif; font-size: 1.75rem; line-height: 1; letter-spacing: .02em; color: var(--brass); }
+.menu-skeleton .skeleton-head p { margin: 2px 0 0; font-size: .8rem; color: var(--text-secondary); }
+.menu-skeleton .skeleton-chips { display: flex; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--line); overflow: hidden; }
+.menu-skeleton .skeleton-chips .sk { flex: none; width: 88px; height: 44px; border-radius: 22px; }
+.menu-skeleton .skeleton-list { display: flex; flex-direction: column; gap: 12px; padding-top: 20px; }
+.menu-skeleton .skeleton-card { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 16px; background: var(--bg-card); border: 1px solid var(--line); }
+.menu-skeleton .sk { display: block; background: linear-gradient(90deg, #2b2219 0%, #3a2d20 50%, #2b2219 100%); background-size: 200% 100%; animation: momo-shimmer 1.6s linear infinite; }
+.menu-skeleton .sk-title { width: 60%; height: 20px; border-radius: 6px; }
+.menu-skeleton .sk-row { height: 56px; border-radius: 12px; }
+.menu-skeleton .sk-btn { height: 48px; border-radius: 12px; }
+@keyframes momo-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .menu-skeleton .sk { animation: none; } }
+
+/* Shown while a saved or built-in menu is on screen and the live one is loading */
+.app .menu-refresh-note { padding: 8px 20px; font-size: .82rem; text-align: center; color: var(--brass-light); background: rgba(201, 151, 91, .1); border-bottom: 1px solid var(--line); }

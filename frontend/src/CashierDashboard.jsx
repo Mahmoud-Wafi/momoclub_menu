@@ -82,7 +82,7 @@ function Login({ onLogin }) {
   return (
     <main className="cashier-app cashier-login" dir="rtl">
       <form className="cashier-login-card" onSubmit={submit}>
-        <img src="/logo.jpg" alt="" className="cashier-logo" />
+        <img src="/logo.webp" alt="" className="cashier-logo" />
         <h1>شاشة الكاشير</h1>
         <p>سجّل الدخول لاستقبال الطلبات ومتابعتها.</p>
         {error && <div className="cashier-error" role="alert">{error}</div>}
@@ -303,7 +303,7 @@ export default function CashierDashboard() {
     <div className="cashier-app" dir="rtl">
       <header className="c-topbar">
         <div className="c-brand">
-          <img src="/logo.jpg" alt="" className="cashier-logo sm" />
+          <img src="/logo.webp" alt="" className="cashier-logo sm" />
           <div>
             <div className="c-brand-name">MOMO CLUB</div>
             <div className="c-brand-sub">شاشة الكاشير</div>
