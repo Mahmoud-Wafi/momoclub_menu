@@ -78,8 +78,6 @@ function App() {
   const [customerName, setCustomerName] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
-  const [sending, setSending] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState(null); // { id } after a direct send
   const [noteFor, setNoteFor] = useState(null); // item id whose notes panel is open
   const [noteText, setNoteText] = useState('');
   const [toast, setToast] = useState(null);
@@ -385,27 +383,6 @@ function App() {
     showToast('✅ تم تجهيز طلبك، أكمل الإرسال من واتساب!', 'success');
   }, [validateOrder, submitOrder, buildWhatsAppMessage, resetOrderForm, showToast]);
 
-  // Send straight to the restaurant system
-  const sendToRestaurant = useCallback(async () => {
-    if (sending || !validateOrder()) return;
-    setSending(true);
-    try {
-      const res = await submitOrder('app');
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const first = data && typeof data === 'object' ? Object.values(data).flat()[0] : null;
-        showToast(`❌ ${typeof first === 'string' ? first : 'تعذر إرسال الطلب، حاول مرة أخرى'}`, 'error');
-        return;
-      }
-      resetOrderForm();
-      setOrderSuccess({ id: data.id });
-    } catch {
-      showToast('❌ تعذر الاتصال، تحقق من الإنترنت أو أرسل عبر واتساب', 'error');
-    } finally {
-      setSending(false);
-    }
-  }, [sending, validateOrder, submitOrder, resetOrderForm, showToast]);
-
   // Cashier mode: separate login, token and API from the manager
   if (viewMode === 'cashier') {
     return <CashierDashboard />;
@@ -505,18 +482,6 @@ function App() {
           </nav>
         </div>
       </header>
-
-      {orderSuccess && (
-        <div className="cat-sheet-backdrop" onClick={() => setOrderSuccess(null)}>
-          <div className="cat-sheet success-sheet" role="dialog" aria-modal="true" aria-label="تم إرسال الطلب" onClick={e => e.stopPropagation()}>
-            <div className="success-mark" aria-hidden="true">✓</div>
-            <h3>تم إرسال طلبك للمطعم</h3>
-            <div className="success-no">رقم الطلب <strong dir="ltr">#{orderSuccess.id}</strong></div>
-            <p>سنبدأ تحضيره الآن. احتفظ برقم الطلب لو احتجت أي استفسار.</p>
-            <button className="note-confirm" onClick={() => setOrderSuccess(null)}>تمام</button>
-          </div>
-        </div>
-      )}
 
       {catSheetOpen && (
         <div className="cat-sheet-backdrop" onClick={() => setCatSheetOpen(false)}>
@@ -903,9 +868,6 @@ function App() {
               {/* Send buttons */}
               {cart.length > 0 && (
                 <div className="send-buttons">
-                  <button className="send-direct-btn" onClick={sendToRestaurant} disabled={sending}>
-                    {sending ? 'جاري الإرسال…' : 'إرسال الطلب للمطعم'}
-                  </button>
                   <button className="whatsapp-btn" onClick={sendWhatsApp}>
                     إرسال عبر واتساب
                   </button>
